@@ -1,0 +1,1449 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>elbdrop MoveMents</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0a0a0a;--bg2:#141414;--bg3:#1e1e1e;--bg4:#252525;
+  --border:#2a2a2a;--border2:#333;
+  --text:#f0f0f0;--t2:#a0a0a0;--t3:#666;
+  --gold:#c9a84c;--gold2:#e8c97a;
+  --gbg:rgba(201,168,76,.08);--gbg2:rgba(201,168,76,.15);
+  --red:#e24b4a;--green:#1d9e75;--warn:#ef9f27;
+  --r:10px;--rl:14px;
+}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);font-size:14px;min-height:100vh}
+#root{max-width:430px;margin:0 auto;min-height:100vh;background:var(--bg2);display:flex;flex-direction:column}
+
+/* HEADER */
+.hdr{padding:13px 18px 10px;border-bottom:.5px solid var(--border);display:flex;align-items:center;justify-content:space-between;background:var(--bg2);position:sticky;top:0;z-index:50}
+.logo{font-size:13px;font-weight:700;letter-spacing:.1em;color:var(--gold);text-transform:uppercase}
+.logo em{color:var(--t2);font-style:normal;font-weight:400}
+.role-tag{font-size:11px;color:var(--t3);background:var(--bg3);padding:3px 8px;border-radius:20px;border:.5px solid var(--border2)}
+.role-tag.admin{color:var(--gold2);background:var(--gbg2);border-color:rgba(201,168,76,.3)}
+
+/* CONTENT */
+.page{flex:1;overflow-y:auto;padding-bottom:80px;display:none}
+.page.active{display:block}
+.sec{padding:14px 18px}
+.stitle{font-size:10px;font-weight:500;color:var(--t3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px}
+
+/* BOTTOM NAV */
+.bnav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:430px;background:var(--bg2);border-top:.5px solid var(--border);display:flex;padding:6px 0 14px;z-index:100}
+.ni{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;color:var(--t3);font-size:9px;font-weight:500;border:none;background:none;cursor:pointer}
+.ni.on{color:var(--gold)}
+.ni svg{width:20px;height:20px;stroke-width:1.5;fill:none;stroke:currentColor}
+
+/* LOGIN */
+#pg-login{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 28px;background:var(--bg);min-height:100vh}
+.login-title{font-size:24px;font-weight:700;letter-spacing:.14em;color:var(--gold);text-transform:uppercase}
+.login-sub{font-size:11px;color:var(--t3);letter-spacing:.18em;text-transform:uppercase;margin-top:4px;margin-bottom:36px}
+.login-form{width:100%;max-width:320px;display:flex;flex-direction:column;gap:13px}
+.lerr{color:var(--red);font-size:12px;text-align:center;padding:8px;background:rgba(226,75,74,.08);border-radius:var(--r);display:none}
+
+/* FORMS */
+.fg{display:flex;flex-direction:column;gap:5px}
+.fl{font-size:10px;color:var(--t2);font-weight:500;text-transform:uppercase;letter-spacing:.07em}
+.fi{background:var(--bg3);border:.5px solid var(--border2);border-radius:var(--r);padding:10px 13px;color:var(--text);font-size:13px;outline:none;width:100%;transition:border-color .15s}
+.fi:focus{border-color:var(--gold)}
+.fi[readonly]{opacity:.55}
+.fsel{background:var(--bg3);border:.5px solid var(--border2);border-radius:var(--r);padding:10px 13px;color:var(--text);font-size:13px;outline:none;width:100%}
+.fta{background:var(--bg3);border:.5px solid var(--border2);border-radius:var(--r);padding:10px 13px;color:var(--text);font-size:13px;outline:none;resize:vertical;width:100%;min-height:64px}
+
+/* BUTTONS */
+.btn{border:none;border-radius:var(--r);padding:11px;font-size:13px;font-weight:600;cursor:pointer;width:100%;transition:opacity .15s}
+.btn:hover{opacity:.9}
+.btn-gold{background:var(--gold);color:#000}
+.btn-green{background:var(--green);color:#fff}
+.btn-outline{background:transparent;color:var(--t2);border:.5px solid var(--border2)}
+.btn-outline:hover{border-color:var(--gold);color:var(--gold)}
+.btn-danger{background:rgba(226,75,74,.1);color:var(--red);border:.5px solid rgba(226,75,74,.3)}
+.btn-sm{padding:6px 12px;font-size:11px;font-weight:500;border-radius:8px;cursor:pointer;border:none;flex:1}
+.btn-sm:hover{opacity:.85}
+
+/* CARDS */
+.card{background:var(--bg3);border:.5px solid var(--border);border-radius:var(--rl);padding:13px 15px;margin-bottom:9px}
+.card.cp{cursor:pointer;transition:border-color .15s}
+.card.cp:hover{border-color:var(--border2)}
+.crow{display:flex;justify-content:space-between;align-items:flex-start;gap:8px}
+.ct{font-size:13px;font-weight:500;color:var(--text)}
+.cs{font-size:11px;color:var(--t2);margin-top:2px}
+.dvd{height:.5px;background:var(--border);margin:10px 0}
+
+/* BADGES */
+.bdg{display:inline-block;padding:3px 9px;border-radius:20px;font-size:10px;font-weight:500;white-space:nowrap}
+.b-new{background:rgba(52,120,220,.15);color:#6baeed}
+.b-pend{background:rgba(239,159,39,.15);color:var(--warn)}
+.b-done{background:rgba(29,158,117,.12);color:var(--green)}
+.b-gold{background:var(--gbg);color:var(--gold2)}
+.b-red{background:rgba(226,75,74,.12);color:var(--red)}
+
+/* AMOUNT ROWS */
+.amr{display:flex;justify-content:space-between;align-items:flex-start;padding:6px 0;border-bottom:.5px solid var(--border)}
+.amr:last-child{border-bottom:none}
+.aml{font-size:12px;color:var(--t2)}
+.amv{font-size:12px;font-weight:500;color:var(--gold);text-align:right}
+
+/* TABS */
+.tabs{display:flex;border-bottom:.5px solid var(--border);overflow-x:auto}
+.tab{padding:10px 14px;font-size:12px;font-weight:500;color:var(--t3);border-bottom:2px solid transparent;white-space:nowrap;background:none;border-top:none;border-left:none;border-right:none;cursor:pointer}
+.tab.on{color:var(--gold);border-bottom-color:var(--gold)}
+
+/* DETAIL HEADER */
+.dhdr{padding:13px 18px;display:flex;align-items:center;gap:12px;border-bottom:.5px solid var(--border);background:var(--bg2);position:sticky;top:0;z-index:10}
+.back{background:none;border:none;color:var(--gold);cursor:pointer;font-size:13px;font-weight:500}
+
+/* MODAL */
+.mov{position:fixed;inset:0;background:rgba(0,0,0,.78);z-index:200;display:none;align-items:flex-end;justify-content:center}
+.mov.open{display:flex}
+.mod{background:var(--bg3);border-radius:var(--rl) var(--rl) 0 0;padding:20px 18px 28px;width:100%;max-width:430px;border-top:.5px solid var(--border2);max-height:88vh;overflow-y:auto}
+.mod-hdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
+.mod-hdr h3{font-size:15px;font-weight:500}
+.mclose{background:none;border:none;color:var(--t2);font-size:20px;cursor:pointer;line-height:1}
+
+/* PROFILE */
+.ava{width:56px;height:56px;border-radius:50%;background:var(--gbg2);border:1.5px solid var(--gold);display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:600;color:var(--gold);margin:0 auto 10px}
+
+/* UPLOAD ZONE */
+.upzone{background:var(--bg3);border:.5px dashed var(--border2);border-radius:var(--r);padding:13px;text-align:center;cursor:pointer;margin-bottom:8px;transition:border-color .15s}
+.upzone:hover{border-color:var(--gold)}
+
+/* CONTRACT */
+.ctxt{font-size:11px;color:var(--t2);line-height:1.75;max-height:200px;overflow-y:auto;padding:12px;background:var(--bg4);border-radius:8px;margin:10px 0;white-space:pre-wrap}
+.sigpad{background:var(--bg4);border:.5px solid var(--border2);border-radius:var(--r);height:80px;position:relative;cursor:crosshair;margin:8px 0}
+.sigpad canvas{position:absolute;inset:0;width:100%;height:100%;border-radius:var(--r)}
+.siglbl{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--t3);pointer-events:none}
+
+/* PROGRESS */
+.ptr{height:3px;background:var(--bg4);border-radius:3px;overflow:hidden;margin:6px 0}
+.pb{height:100%;background:var(--gold);border-radius:3px}
+.plbl{display:flex;justify-content:space-between;font-size:9px;color:var(--t3)}
+
+/* ROUTE */
+.route-up{width:8px;height:8px;border-radius:50%;background:var(--green);flex-shrink:0;margin-top:3px}
+.route-dn{width:8px;height:8px;border-radius:50%;background:var(--red);flex-shrink:0;margin-top:3px}
+.route-line{width:1px;height:12px;background:var(--border2);margin:2px 0 2px 3.5px}
+
+/* FLIGHT INFO BOX */
+.fbox{background:var(--gbg);border-radius:8px;padding:8px 10px;margin-top:8px;display:grid;grid-template-columns:1fr 1fr;gap:4px}
+.fbox-lbl{font-size:9px;color:var(--t3);text-transform:uppercase}
+.fbox-val{font-size:12px;font-weight:500;color:var(--text)}
+
+/* TIME */
+.tbig{font-size:40px;font-weight:300;color:var(--gold);letter-spacing:.06em;font-variant-numeric:tabular-nums;text-align:center}
+.tstat{display:inline-block;padding:4px 14px;border-radius:20px;font-size:11px}
+.ts-on{background:rgba(29,158,117,.12);color:var(--green)}
+.ts-off{background:var(--bg3);color:var(--t3)}
+
+/* SCAN BTN */
+.sbtn{background:var(--gbg2);border:1px dashed var(--gold);border-radius:var(--rl);padding:22px;text-align:center;cursor:pointer;width:100%}
+
+/* CONFIRM NOTE */
+.cnote{background:rgba(29,158,117,.06);border-left:2px solid var(--green);padding:7px 10px;border-radius:0 6px 6px 0;font-size:11px;color:var(--t2);line-height:1.6;margin-top:8px}
+
+/* WARN BOX */
+.wbox{background:rgba(239,159,39,.08);border:.5px solid rgba(239,159,39,.3);border-radius:var(--r);padding:8px 12px;font-size:11px;color:var(--warn);margin-bottom:8px}
+
+/* DRIVER CHIP */
+.dchip{display:inline-flex;align-items:center;gap:5px;background:var(--gbg2);border:.5px solid rgba(201,168,76,.3);border-radius:20px;padding:3px 10px;font-size:11px;color:var(--gold2);margin:2px}
+.dava{width:20px;height:20px;border-radius:50%;background:var(--gbg);border:1px solid var(--gold);display:inline-flex;align-items:center;justify-content:center;font-size:8px;font-weight:600;color:var(--gold)}
+
+#toast{position:fixed;top:18px;left:50%;transform:translateX(-50%);background:#1e1e1e;border:.5px solid var(--gold);color:var(--gold2);padding:9px 16px;border-radius:30px;font-size:12px;z-index:999;display:none;white-space:nowrap;pointer-events:none}
+</style>
+</head>
+<body>
+<div id="toast"></div>
+
+<!-- ═══════════════════ LOGIN ═══════════════════ -->
+<div id="pg-login">
+  <div class="login-title">elbdrop</div>
+  <div class="login-sub">MoveMents</div>
+  <div class="login-form">
+    <div class="fg"><label class="fl">E-Mail</label><input class="fi" type="email" id="lemail" placeholder="name@elbdrop.com"></div>
+    <div class="fg"><label class="fl">Passwort</label><input class="fi" type="password" id="lpwd" placeholder="••••••••"></div>
+    <div class="lerr" id="lerr">E-Mail oder Passwort falsch</div>
+    <button class="btn btn-gold" id="lbtn">Anmelden</button>
+    <div style="text-align:center;font-size:11px;color:var(--t3)">Admin: info@elbdrop.com / Elbdrop2025!</div>
+    <div style="text-align:center;font-size:11px;color:var(--t3)">Fahrer: tolga.guelay@elbdrop.com / Tolga2025!</div>
+  </div>
+</div>
+
+<!-- ═══════════════════ APP SHELL ═══════════════════ -->
+<div id="root" style="display:none">
+  <div class="hdr">
+    <div class="logo">elbdrop <em>MoveMents</em></div>
+    <div style="display:flex;align-items:center;gap:10px">
+      <div class="role-tag" id="roleTag">Fahrer</div>
+      <button style="background:none;border:none;color:var(--t3);font-size:11px;cursor:pointer" id="lout">Abmelden</button>
+    </div>
+  </div>
+
+  <!-- Pages -->
+  <div class="page" id="pg-events"></div>
+  <div class="page" id="pg-event-detail"></div>
+  <div class="page" id="pg-new-event"></div>
+  <div class="page" id="pg-planning"></div>
+  <div class="page" id="pg-drivers"></div>
+  <div class="page" id="pg-transfers"></div>
+  <div class="page" id="pg-new-transfer"></div>
+  <div class="page" id="pg-times-admin"></div>
+  <div class="page" id="pg-billing-admin"></div>
+  <!-- Driver pages -->
+  <div class="page" id="pg-overview"></div>
+  <div class="page" id="pg-order-detail"></div>
+  <div class="page" id="pg-rides"></div>
+  <div class="page" id="pg-times"></div>
+  <div class="page" id="pg-receipts"></div>
+  <div class="page" id="pg-billing"></div>
+  <div class="page" id="pg-billing-detail"></div>
+  <div class="page" id="pg-profile"></div>
+
+  <nav class="bnav" id="bnav"></nav>
+</div>
+
+<!-- ═══════════════════ MODALS ═══════════════════ -->
+<div class="mov" id="mod-scan">
+  <div class="mod">
+    <div class="mod-hdr"><h3>Quittung erfassen</h3><button class="mclose" onclick="closeModal('mod-scan')">✕</button></div>
+    <div id="scan-prev" style="display:none;margin-bottom:10px"><img id="scan-img" style="width:100%;border-radius:8px;max-height:140px;object-fit:contain;background:var(--bg4)"></div>
+    <div class="fg" style="margin-bottom:9px"><label class="fl">Auftrag / Event zuordnen</label>
+      <select class="fsel" id="scan-event"></select></div>
+    <div class="fg" style="margin-bottom:9px"><label class="fl">Betrag (€)</label><input class="fi" id="scan-amt" placeholder="0,00"></div>
+    <div class="fg" style="margin-bottom:9px"><label class="fl">Datum</label><input class="fi" type="date" id="scan-dt"></div>
+    <div class="fg" style="margin-bottom:13px"><label class="fl">Beschreibung</label><input class="fi" id="scan-desc" placeholder="Kraftstoff, Maut, Parkgebühr ..."></div>
+    <div style="display:flex;gap:9px">
+      <button class="btn btn-outline" onclick="closeModal('mod-scan')">Abbrechen</button>
+      <button class="btn btn-gold" style="flex:2" id="scan-save">Speichern &amp; PDF</button>
+    </div>
+  </div>
+</div>
+
+<div class="mov" id="mod-contract">
+  <div class="mod">
+    <div class="mod-hdr"><h3 id="cmod-title">Vertrag</h3><button class="mclose" onclick="closeModal('mod-contract')">✕</button></div>
+    <div class="ctxt" id="cmod-text"></div>
+    <div class="fl" style="margin-bottom:5px">Digitale Unterschrift</div>
+    <div class="sigpad" id="sigpad"><canvas id="sigcv"></canvas><div class="siglbl" id="siglbl">Hier unterschreiben</div></div>
+    <button style="background:none;border:none;color:var(--gold2);font-size:12px;cursor:pointer;padding:2px 0;margin-bottom:8px" id="sig-clear">Unterschrift löschen</button>
+    <label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer;margin-bottom:13px">
+      <input type="checkbox" id="cagree" style="margin-top:2px;accent-color:var(--gold)">
+      <span style="font-size:12px;color:var(--t2)">Ich habe den Vertrag vollständig gelesen und akzeptiere die Bedingungen rechtsverbindlich.</span>
+    </label>
+    <button class="btn btn-gold" id="csign">Verbindlich unterzeichnen &amp; als PDF speichern</button>
+  </div>
+</div>
+
+<input type="file" id="file-input" accept="image/*,application/pdf" capture="environment" style="display:none">
+
+<script>
+// ══════════════════════════════════════════
+// DATA & CONSTANTS
+// ══════════════════════════════════════════
+const USERS = {
+  'info@elbdrop.com':         {pwd:'Elbdrop2025!', role:'admin',  name:'Tolga Ozan Gülay', ini:'TG'},
+  'tolga.guelay@elbdrop.com': {pwd:'Tolga2025!',   role:'driver', name:'Tolga Gülay',      ini:'TG'},
+  'max.muster@elbdrop.com':   {pwd:'Max2025!',     role:'driver', name:'Max Muster',       ini:'MM'}
+};
+const HR=20, GH=10;
+
+let CU=null; // current user
+let clockInt=null, svcRunning=false, svcStart=null;
+let sigDraw=false, sigLX=0, sigLY=0, sigHas=false, activeCon=null;
+let activeTab='', activeDetail=null;
+
+// Verpflegung: 28€ pro Einsatztag (fix), optional +14€ Anreisetag, +14€ Abreisetag
+function calcVerpf(days, vAnr, vAbr){
+  return (days||0)*28 + (vAnr?14:0) + (vAbr?14:0);
+}
+
+let events = [
+  {id:1,title:'VIP Personenschutz',     dateFrom:'2025-06-05',dateTo:'2025-06-07',days:3,extra:0, anr:15,abr:15,vAnr:true,vAbr:true,client:'VIP Klient',driverId:'tolga.guelay@elbdrop.com',
+   status:'sent',driverStatus:'pending',details:'Dreitägiger Personenschutz-Einsatz. Durchgehende Bereitschaft erforderlich.',pickup:'Flughafen HAM · Do 09:00',dropoff:'Varied'},
+  {id:2,title:'Messe Hamburg',          dateFrom:'2025-06-10',dateTo:'2025-06-12',days:3,extra:0, anr:15,abr:15,vAnr:false,vAbr:false,client:'Aussteller Gruppe',driverId:null,
+   status:'open',driverStatus:null,details:'Gruppenbeförderung zur Fachmesse.',pickup:'CCH Hamburg',dropoff:'Diverse Hotels'},
+  {id:3,title:'Hochzeit · Hotel Vier J.',dateFrom:'2025-06-20',dateTo:'2025-06-21',days:2,extra:2, anr:15,abr:15,vAnr:true,vAbr:true,client:'Familie Becker',driverId:'tolga.guelay@elbdrop.com',
+   status:'confirmed',driverStatus:'accepted',details:'Hochzeits-Shuttle Dienst. Elegantes Auftreten erforderlich.',pickup:'Standesamt Hamburg',dropoff:'Hotel Vier Jahreszeiten'},
+  {id:4,title:'Messe · CCH April',      dateFrom:'2025-04-10',dateTo:'2025-04-12',days:3,extra:3, anr:15,abr:15,vAnr:true,vAbr:true,client:'Gruppe (8 Pers.)',driverId:'tolga.guelay@elbdrop.com',
+   status:'done',driverStatus:'accepted',details:'Abgeschlossener Messeeinsatz.',pickup:'CCH Hamburg',dropoff:'Diverse Hotels'}
+];
+
+function calcEvent(e){
+  const verpf=calcVerpf(e.days, e.vAnr, e.vAbr);
+  const guarPay=e.days*GH*HR;
+  const extraPay=(e.extra||0)*HR;
+  const base=guarPay+extraPay;
+  const total=base+verpf+(e.anr||0)+(e.abr||0);
+  return {guarPay,extraPay,base,verpf,total,totalH:e.days*GH+(e.extra||0)};
+}
+
+let transfers = [
+  {id:1,date:'2025-06-04',time:'09:00',from:'Hamburg Hbf',to:'Flughafen HAM',pass:'Frau Meyer',veh:'Mercedes V-Klasse',
+   type:'flight',flightno:'LH 2271',ftime:'10:45',term:'Terminal 2',fap:'MUC',contact:'+49 151 23456789',note:'Begrüßungsschild mitbringen',
+   driverId:'tolga.guelay@elbdrop.com',status:'assigned',driverConfirmed:false},
+  {id:2,date:'2025-06-04',time:'14:30',from:'Flughafen HAM',to:'Hotel Vier Jahreszeiten',pass:'Mr. Johnson',veh:'BMW 7er',
+   type:'flight',flightno:'BA 992',ftime:'14:10',term:'Terminal 1',fap:'LHR',contact:'+44 7700 900142',note:'VIP — besondere Diskretion',
+   driverId:'tolga.guelay@elbdrop.com',status:'assigned',driverConfirmed:true},
+  {id:3,date:'2025-06-06',time:'07:00',from:'Blankenese',to:'HAM Terminal 2',pass:'Herr Becker',veh:'Mercedes S-Klasse',
+   type:'flight',flightno:'',ftime:'',term:'',fap:'',contact:'',note:'',
+   driverId:'max.muster@elbdrop.com',status:'assigned',driverConfirmed:false},
+  {id:4,date:'2025-06-07',time:'20:00',from:'Alster Hotel',to:'Elbphilharmonie',pass:'VIP Gruppe (4)',veh:'Mercedes V-Klasse',
+   type:'other',contact:'',note:'Abendgarderobe empfohlen',
+   driverId:null,status:'unassigned',driverConfirmed:false}
+];
+
+let timeEntries=[
+  {id:1,driverId:'tolga.guelay@elbdrop.com',date:'2025-06-04',start:'07:45',end:'16:30',astart:'08:00',aend:'16:30',min:525,adminStatus:'pending',driverStatus:'submitted'},
+  {id:2,driverId:'tolga.guelay@elbdrop.com',date:'2025-06-03',start:'05:45',end:'14:15',astart:'06:00',aend:'14:15',min:510,adminStatus:'confirmed',driverStatus:'confirmed'},
+  {id:3,driverId:'max.muster@elbdrop.com', date:'2025-06-04',start:'08:15',end:'17:00',astart:'08:30',aend:'17:00',min:525,adminStatus:'pending',driverStatus:'submitted'}
+];
+
+let receipts=[];
+
+let billingItems=[
+  {id:1,eventId:4,driverId:'tolga.guelay@elbdrop.com',event:'Messe · CCH April',status:'ready'},
+  {id:2,eventId:3,driverId:'tolga.guelay@elbdrop.com',event:'Hochzeit · Hotel Vier J.',status:'processing'},
+];
+
+const DOCS=[
+  {key:'fs',   label:'Führerschein',   sub:'Vorder- & Rückseite · PDF oder Foto'},
+  {key:'pa',   label:'Personalausweis',sub:'Vorder- & Rückseite'},
+  {key:'gew',  label:'Gewerbeschein',  sub:'Aktuelle Ausstellung · PDF'},
+  {key:'ps',   label:'P-Schein',       sub:'Inkl. Gültigkeitsdatum'}
+];
+let uploadedDocs={};
+
+const CONTRACTS=[
+  {id:1,title:'Allgemeine Geschäftsbedingungen (AGB)',signed:false,signedDate:null,
+   text:'ALLGEMEINE GESCHÄFTSBEDINGUNGEN\nelbdrop MoveMents\n\n§1 Geltungsbereich\nDiese AGB gelten für alle Fahrer, die im Auftrag von elbdrop MoveMents tätig sind.\n\n§2 Leistungspflichten\nDer Fahrer verpflichtet sich, alle Einsätze pünktlich, zuverlässig und professionell durchzuführen. Eigenmächtige Stornierungen sind nicht gestattet.\n\n§3 Erscheinungsbild\nDer Fahrer erscheint zu jedem Einsatz in gepflegter, dunkler Kleidung. Gegenüber Kunden ist stets höchste Professionalität und Diskretion zu wahren.\n\n§4 Vergütung\nVergütung auf Basis vereinbarter Stundensätze, Verpflegungspauschalen und Reisekostenpauschalen. Auszahlung binnen 14 Tagen nach Rechnungslegung.\n\n§5 Kündigung\nMit einer Frist von 14 Tagen zum Monatsende von beiden Seiten schriftlich möglich.'},
+  {id:2,title:'Datenschutzerklärung & Einwilligung (DSGVO)',signed:false,signedDate:null,
+   text:'DATENSCHUTZERKLÄRUNG\nGemäß DSGVO Art. 13\n\nVerantwortlicher: elbdrop MoveMents · info@elbdrop.com\n\n§1 Erhobene Daten\nName, Anschrift, Geburtsdatum, Kontaktdaten, Bankverbindung, Steuer-ID sowie Dokumente zur Berufsausübung.\n\n§2 Zweck\nAusschließlich zur Abwicklung der Fahrdienstleistungen und Lohnbuchhaltung.\n\n§3 Speicherdauer\nDauer der Zusammenarbeit + gesetzliche Aufbewahrungsfristen (mind. 10 Jahre).\n\n§4 Rechte\nAuskunft, Berichtigung, Löschung und Widerruf jederzeit schriftlich möglich.'},
+  {id:3,title:'Geheimhaltungsvereinbarung (NDA)',signed:false,signedDate:null,
+   text:'GEHEIMHALTUNGSVEREINBARUNG\n\n§1 Geheimhaltungspflicht\nStrikte Vertraulichkeit über Identität und Daten von Kunden, Bewegungsprofile, interne Betriebsabläufe und Preisstrukturen.\n\n§2 Weitergabeverbot\nKeine Weitergabe an Dritte — auch nicht nach Beendigung der Zusammenarbeit.\n\n§3 Geltungsdauer\nUnbefristet, auch über das Ende hinaus.\n\n§4 Vertragsstrafe\nBei Verletzung bis zu 10.000 €. Weitergehende Schadensersatzansprüche vorbehalten.\n\n§5 Social Media\nJede Veröffentlichung von Kunden oder Einsatzorten ist ausdrücklich untersagt.'},
+  {id:4,title:'Verhaltenskodex & Unternehmensrichtlinien',signed:false,signedDate:null,
+   text:'VERHALTENSKODEX\nelbdrop MoveMents\n\n§1 Pünktlichkeit\nMindestens 15 Minuten vor Einsatzbeginn am Treffpunkt. Verspätungen sofort melden.\n\n§2 Erscheinungsbild\nDunkler Anzug oder schwarze Hose/Hemd. Keine sichtbaren Tätowierungen im Dienst.\n\n§3 Kommunikation\nHöflich, zurückhaltend. Keine politischen oder religiösen Gespräche.\n\n§4 Mobiltelefon\nNur Freisprechanlage während der Fahrt. Keine Privatgespräche in Anwesenheit von Kunden.\n\n§5 Alkohol & Drogen\nAbsolutes Verbot vor und während des Einsatzes.'}
+];
+let localCons=CONTRACTS.map(c=>({...c}));
+
+let drivers=[
+  {name:'Tolga Gülay', email:'tolga.guelay@elbdrop.com', ini:'TG', status:'aktiv'},
+  {name:'Max Muster',  email:'max.muster@elbdrop.com',   ini:'MM', status:'aktiv'}
+];
+
+// ══════════════════════════════════════════
+// HELPERS
+// ══════════════════════════════════════════
+function eur(v){return(+v||0).toLocaleString('de-DE',{minimumFractionDigits:2,maximumFractionDigits:2})+' €';}
+function fmtMin(m){return Math.floor(m/60)+'h '+String(m%60).padStart(2,'0')+'min';}
+function fmtT(d){return String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');}
+function fmtDate(s){if(!s)return'–';const d=new Date(s);return d.toLocaleDateString('de-DE',{day:'2-digit',month:'2-digit',year:'numeric'});}
+function fmtDateShort(s){if(!s)return'–';const d=new Date(s);return d.toLocaleDateString('de-DE',{day:'2-digit',month:'2-digit'});}
+function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.style.display='block';setTimeout(()=>t.style.display='none',2800);}
+function openModal(id){document.getElementById(id).classList.add('open');}
+function closeModal(id){document.getElementById(id).classList.remove('open');}
+function rndStart(d){const m=d.getMinutes();const b=Math.floor(m/15)*15-15;const nd=new Date(d);if(b<0){nd.setHours(nd.getHours()-1,45,0,0);}else{nd.setMinutes(b,0,0);}return nd;}
+function rndEnd(d){const m=d.getMinutes(),s=d.getSeconds();if(s===0&&m%15===0)return d;const t=[0,15,30,45];const rm=t.find(x=>x>m);const nd=new Date(d);if(rm===undefined){nd.setHours(nd.getHours()+1,0,0,0);}else{nd.setMinutes(rm,0,0);}return nd;}
+function driverName(id){const d=drivers.find(x=>x.email===id);return d?d.name:id||'–';}
+function driverIni(id){const d=drivers.find(x=>x.email===id);return d?d.ini:'?';}
+
+function showPage(id){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  const p=document.getElementById(id);if(p)p.classList.add('active');
+}
+function setNavActive(tab){
+  document.querySelectorAll('.ni').forEach(n=>n.classList.toggle('on',n.dataset.tab===tab));
+  activeTab=tab;
+}
+
+// ══════════════════════════════════════════
+// AUTH
+// ══════════════════════════════════════════
+document.getElementById('lbtn').onclick=doLogin;
+document.getElementById('lpwd').onkeydown=e=>{if(e.key==='Enter')doLogin();};
+document.getElementById('lout').onclick=doLogout;
+
+function doLogin(){
+  const em=document.getElementById('lemail').value.trim().toLowerCase();
+  const pw=document.getElementById('lpwd').value;
+  const u=USERS[em];
+  const err=document.getElementById('lerr');
+  if(!u||u.pwd!==pw){err.style.display='block';return;}
+  err.style.display='none';
+  CU={...u,email:em};
+  document.getElementById('pg-login').style.display='none';
+  document.getElementById('root').style.display='flex';
+  document.getElementById('roleTag').textContent=CU.role==='admin'?'Admin':'Fahrer';
+  document.getElementById('roleTag').className='role-tag'+(CU.role==='admin'?' admin':'');
+  buildNav();
+  if(CU.role==='admin') goAdmin('events');
+  else goDriver('overview');
+  startClock();
+}
+function doLogout(){
+  CU=null;svcRunning=false;svcStart=null;
+  if(clockInt){clearInterval(clockInt);clockInt=null;}
+  document.getElementById('root').style.display='none';
+  document.getElementById('pg-login').style.display='flex';
+  document.getElementById('lemail').value='';
+  document.getElementById('lpwd').value='';
+}
+
+// ══════════════════════════════════════════
+// NAV
+// ══════════════════════════════════════════
+function buildNav(){
+  const nav=document.getElementById('bnav');
+  nav.innerHTML='';
+  const items=CU.role==='admin'?[
+    {tab:'events',  icon:'<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>',label:'Events'},
+    {tab:'new-event',icon:'<circle cx="12" cy="12" r="9"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/>',label:'+ Neu'},
+    {tab:'planning', icon:'<circle cx="7" cy="17" r="2"/><circle cx="17" cy="17" r="2"/><path d="M5 17H3v-4l2-5h9l4 4h2v5h-2"/>',label:'Planung'},
+    {tab:'times-admin',icon:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/>',label:'Zeiten'},
+    {tab:'drivers',  icon:'<circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 4-7 8-7s8 3 8 7"/>',label:'Fahrer'},
+  ]:[
+    {tab:'overview', icon:'<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>',label:'Übersicht'},
+    {tab:'rides',    icon:'<circle cx="7" cy="17" r="2"/><circle cx="17" cy="17" r="2"/><path d="M5 17H3v-4l2-5h9l4 4h2v5h-2"/>',label:'Transfers'},
+    {tab:'times',    icon:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/>',label:'Zeiten'},
+    {tab:'receipts', icon:'<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/>',label:'Quittungen'},
+    {tab:'billing',  icon:'<rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/>',label:'Abrechnung'},
+    {tab:'profile',  icon:'<circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 4-7 8-7s8 3 8 7"/>',label:'Profil'},
+  ];
+  items.forEach(it=>{
+    const b=document.createElement('button');
+    b.className='ni';b.dataset.tab=it.tab;
+    b.innerHTML=`<svg viewBox="0 0 24 24">${it.icon}</svg>${it.label}`;
+    b.onclick=()=>CU.role==='admin'?goAdmin(it.tab):goDriver(it.tab);
+    nav.appendChild(b);
+  });
+}
+
+function goAdmin(tab){
+  setNavActive(tab);
+  const pageMap={
+    'events':renderAdminEvents,
+    'new-event':renderNewEvent,
+    'planning':renderPlanning,
+    'times-admin':renderTimesAdmin,
+    'drivers':renderDrivers,
+  };
+  if(pageMap[tab]){pageMap[tab]();showPage('pg-'+tab);}
+}
+function goDriver(tab){
+  setNavActive(tab);
+  const pageMap={
+    'overview':renderOverview,
+    'rides':renderRides,
+    'times':renderTimes,
+    'receipts':renderReceipts,
+    'billing':renderBilling,
+    'profile':renderProfile,
+  };
+  if(pageMap[tab]){pageMap[tab]();showPage('pg-'+tab);}
+}
+
+// ══════════════════════════════════════════
+// SHARED HTML BUILDERS
+// ══════════════════════════════════════════
+function detailHdr(title,backFn){
+  return`<div class="dhdr"><button class="back" onclick="${backFn}">← Zurück</button><div style="font-size:14px;font-weight:500">${title}</div></div>`;
+}
+function badge(cls,txt){return`<span class="bdg ${cls}">${txt}</span>`;}
+function statusBadge(s){
+  const m={open:['b-red','Kein Fahrer'],sent:['b-pend','Anfrage gesendet'],confirmed:['b-done','Bestätigt'],done:['b-done','Abgeschlossen'],pending:['b-pend','Ausstehend'],accepted:['b-done','Angenommen'],declined:['b-red','Abgelehnt']};
+  const d=m[s]||['b-gold',s];return badge(d[0],d[1]);
+}
+
+// ══════════════════════════════════════════
+// ADMIN — EVENTS
+// ══════════════════════════════════════════
+let evTab='open';
+function renderAdminEvents(){
+  const pg=document.getElementById('pg-events');
+  const openEvs=events.filter(e=>e.status!=='done');
+  const doneEvs=events.filter(e=>e.status==='done');
+  pg.innerHTML=`
+  <div class="tabs" style="padding:0 18px">
+    <button class="tab ${evTab==='open'?'on':''}" onclick="setEvTab('open')">Aktiv <span class="bdg b-pend" style="margin-left:3px">${openEvs.length}</span></button>
+    <button class="tab ${evTab==='done'?'on':''}" onclick="setEvTab('done')">Abgeschlossen</button>
+  </div>
+  <div class="sec" id="ev-list"></div>`;
+  renderEvList();
+}
+function setEvTab(t){evTab=t;renderAdminEvents();}
+function renderEvList(){
+  const list=document.getElementById('ev-list');if(!list)return;
+  const arr=evTab==='open'?events.filter(e=>e.status!=='done'):events.filter(e=>e.status==='done');
+  if(!arr.length){list.innerHTML='<div style="color:var(--t3);font-size:13px;padding:10px 0">Keine Einträge</div>';return;}
+  list.innerHTML=arr.map(e=>{
+    const c=calcEvent(e);
+    const dr=e.driverId?`<div style="margin-top:5px"><span class="dchip"><span class="dava">${driverIni(e.driverId)}</span>${driverName(e.driverId)}</span></div>`:`<div style="margin-top:5px;font-size:11px;color:var(--t3);font-style:italic">Kein Fahrer zugewiesen</div>`;
+    const btns=e.status!=='done'?`<div style="display:flex;gap:6px;margin-top:8px">
+      <button class="btn-sm" style="background:var(--gbg);color:var(--gold2);border:.5px solid rgba(201,168,76,.3)" onclick="openEventDetail(${e.id})">Details</button>
+      ${e.status==='sent'?`<button class="btn-sm" style="background:rgba(29,158,117,.15);color:var(--green);border:.5px solid rgba(29,158,117,.3)" onclick="adminConfirmEvent(${e.id})">✓ Bestätigen</button>`:''}
+      ${!e.driverId?`<button class="btn-sm" style="background:rgba(52,120,220,.12);color:#6baeed;border:.5px solid rgba(52,120,220,.3)" onclick="openEventDetail(${e.id})">+ Fahrer</button>`:''}
+    </div>`:`<div style="margin-top:8px"><button class="btn-sm" style="background:var(--gbg);color:var(--gold2);border:.5px solid rgba(201,168,76,.3)" onclick="openEventDetail(${e.id})">Details</button></div>`;
+    return`<div class="card cp" onclick="openEventDetail(${e.id})">
+      <div class="crow">
+        <div>
+          <div class="ct">${e.title}</div>
+          <div class="cs">📅 ${fmtDate(e.dateFrom)} – ${fmtDate(e.dateTo)} · ${e.days} Tag${e.days>1?'e':''}</div>
+          <div style="font-size:11px;color:var(--gold);margin-top:2px">Ges. ${eur(c.total)}</div>
+          ${dr}
+        </div>
+        ${statusBadge(e.status)}
+      </div>
+      ${btns}
+    </div>`;
+  }).join('');
+}
+function adminConfirmEvent(id){
+  const e=events.find(x=>x.id===id);if(!e)return;
+  e.status='confirmed';renderEvList();toast('✓ Event bestätigt');
+}
+function openEventDetail(id){
+  const e=events.find(x=>x.id===id);if(!e)return;
+  activeDetail=e;
+  const c=calcEvent(e);
+  const pg=document.getElementById('pg-event-detail');
+  const backFn=`goAdmin('events')`;
+  pg.innerHTML=detailHdr(e.title,backFn)+`
+  <div class="sec">
+    <div class="card">
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px">
+        <span class="bdg b-gold">📅 ${fmtDate(e.dateFrom)}</span>
+        <span class="bdg b-gold">bis ${fmtDate(e.dateTo)}</span>
+        <span class="bdg b-gold">${e.days} Tag${e.days>1?'e':''} · ${c.totalH}h</span>
+      </div>
+      <div style="font-size:12px;color:var(--t2);margin-bottom:8px;line-height:1.6">${e.details}</div>
+      <div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:.5px solid var(--border)"><span style="font-size:11px;color:var(--t2)">Abholung</span><span style="font-size:11px;font-weight:500">${e.pickup}</span></div>
+      <div style="display:flex;justify-content:space-between;padding:5px 0"><span style="font-size:11px;color:var(--t2)">Ziel</span><span style="font-size:11px;font-weight:500">${e.dropoff}</span></div>
+    </div>
+    <div class="card">
+      <div class="stitle">Vergütungsübersicht</div>
+      <div class="amr"><div><span class="aml">Garantierte Vergütung</span><div style="font-size:10px;color:var(--t3)">${e.days} T × ${GH}h × ${eur(HR)}</div></div><span class="amv">${eur(c.guarPay)}</span></div>
+      ${c.extraPay?`<div class="amr"><div><span class="aml">Überstunden</span><div style="font-size:10px;color:var(--t3)">${e.extra}h × ${eur(HR)}</div></div><span class="amv">${eur(c.extraPay)}</span></div>`:''}
+      <div class="amr"><div><span class="aml">Verpflegung Einsatztage</span><div style="font-size:10px;color:var(--t3)">${e.days} Tag${e.days>1?'e':''} × 28,00 €</div></div><span class="amv">${eur(e.days*28)}</span></div>
+      ${e.vAnr?`<div class="amr"><span class="aml">Verpflegung Anreisetag</span><span class="amv">14,00 €</span></div>`:''}
+      ${e.vAbr?`<div class="amr"><span class="aml">Verpflegung Abreisetag</span><span class="amv">14,00 €</span></div>`:''}
+      ${e.anr?`<div class="amr"><span class="aml">Anreisepauschale</span><span class="amv">${eur(e.anr)}</span></div>`:''}
+      ${e.abr?`<div class="amr"><span class="aml">Abreisepauschale</span><span class="amv">${eur(e.abr)}</span></div>`:''}
+      <div class="dvd"></div>
+      <div class="amr"><span class="aml" style="font-weight:500;color:var(--text)">Gesamtbetrag</span><span style="font-size:17px;font-weight:500;color:var(--gold)">${eur(c.total)}</span></div>
+    </div>
+    <div class="card">
+      <div class="stitle">Fahrer zuweisen</div>
+      ${drivers.map(d=>`<label style="display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:.5px solid var(--border);cursor:pointer">
+        <input type="radio" name="ev-driver" value="${d.email}" ${e.driverId===d.email?'checked':''} style="accent-color:var(--gold)">
+        <span class="dchip"><span class="dava">${d.ini}</span>${d.name}</span>
+        ${statusBadge(d.status)}
+      </label>`).join('')}
+      <label style="display:flex;align-items:center;gap:10px;padding:7px 0;cursor:pointer">
+        <input type="radio" name="ev-driver" value="" ${!e.driverId?'checked':''} style="accent-color:var(--gold)">
+        <span style="font-size:12px;color:var(--t3)">Kein Fahrer</span>
+      </label>
+      <button class="btn btn-gold" style="margin-top:10px" onclick="saveEventDriver(${e.id})">Fahrer speichern &amp; Anfrage senden</button>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:4px">
+      <button class="btn btn-outline" onclick="openEventEdit(${e.id})">✎ Bearbeiten</button>
+      ${e.status!=='done'?`<button class="btn btn-green" onclick="adminConfirmEvent(${e.id});goAdmin('events')">✓ Bestätigen</button>`:`<button class="btn btn-outline" onclick="markEventDone(${e.id})">Abgeschlossen</button>`}
+    </div>
+  </div>`;
+  showPage('pg-event-detail');
+}
+function saveEventDriver(id){
+  const e=events.find(x=>x.id===id);if(!e)return;
+  const sel=document.querySelector('input[name="ev-driver"]:checked');
+  if(sel){e.driverId=sel.value||null;if(e.driverId&&e.status==='open')e.status='sent';}
+  toast('✓ Fahrer zugewiesen · Anfrage gesendet');
+  openEventDetail(id);
+}
+function openEventEdit(id){
+  const e=events.find(x=>x.id===id);if(!e)return;
+  renderNewEvent(e);showPage('pg-new-event');
+}
+function markEventDone(id){const e=events.find(x=>x.id===id);if(e)e.status='done';goAdmin('events');}
+
+// ══════════════════════════════════════════
+// ADMIN — NEW EVENT
+// ══════════════════════════════════════════
+function renderNewEvent(edit){
+  const e=edit||{};
+  const isEdit=!!e.id;
+  const pg=document.getElementById('pg-new-event');
+  pg.innerHTML=`
+  <div class="dhdr"><button class="back" onclick="goAdmin('events')">← Zurück</button><div style="font-size:14px;font-weight:500">${isEdit?'Event bearbeiten':'Neues Event'}</div></div>
+  <div class="sec">
+    <div class="card">
+      <div class="fg" style="margin-bottom:9px"><label class="fl">Eventname</label><input class="fi" id="ne-title" value="${e.title||''}" placeholder="VIP Personenschutz, Messe ..."></div>
+      <div class="fg" style="margin-bottom:9px"><label class="fl">Beschreibung für Fahrer</label><textarea class="fta" id="ne-details">${e.details||''}</textarea></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:9px">
+        <div class="fg"><label class="fl">Von</label><input class="fi" type="date" id="ne-from" value="${e.dateFrom||''}"></div>
+        <div class="fg"><label class="fl">Bis</label><input class="fi" type="date" id="ne-to" value="${e.dateTo||''}"></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:9px">
+        <div class="fg"><label class="fl">Einsatztage</label><input class="fi" type="number" id="ne-days" value="${e.days||1}" min="1" oninput="updateVerpfPreview()"></div>
+        <div class="fg"><label class="fl">Überstunden</label><input class="fi" type="number" id="ne-extra" value="${e.extra||0}" min="0" step="0.5"></div>
+      </div>
+      <div class="fg" style="margin-bottom:9px"><label class="fl">Abholung / Startpunkt</label><input class="fi" id="ne-pickup" value="${e.pickup||''}" placeholder="Ort · Uhrzeit"></div>
+      <div class="fg" style="margin-bottom:9px"><label class="fl">Ziel / Einsatzort</label><input class="fi" id="ne-dropoff" value="${e.dropoff||''}" placeholder="Zielort"></div>
+      <div class="fg" style="margin-bottom:9px"><label class="fl">Kunde</label><input class="fi" id="ne-client" value="${e.client||''}" placeholder="Name / Firma"></div>
+    </div>
+    <div class="card">
+      <div class="stitle">Vergütung &amp; Pauschalen</div>
+      <div style="background:var(--gbg);border-radius:8px;padding:9px 11px;margin-bottom:10px;font-size:11px;color:var(--gold2)" id="ne-verpf-preview"></div>
+      <div class="fg" style="margin-bottom:9px">
+        <label class="fl">Verpflegung pro Einsatztag</label>
+        <div style="display:flex;align-items:center;gap:8px;background:var(--bg3);border:.5px solid var(--border2);border-radius:var(--r);padding:10px 13px">
+          <span style="font-size:13px;color:var(--gold);font-weight:500">28,00 €</span>
+          <span style="font-size:11px;color:var(--t3)">× <span id="ne-days-display">${e.days||1}</span> Einsatztage = <span id="ne-verpf-total" style="color:var(--gold2)">${eur((e.days||1)*28)}</span></span>
+        </div>
+      </div>
+      <div style="display:flex;gap:12px;margin-bottom:9px">
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
+          <input type="checkbox" id="ne-vanr" ${e.vAnr?'checked':''} style="accent-color:var(--gold);width:16px;height:16px" onchange="updateVerpfPreview()">
+          <span style="font-size:12px;color:var(--text)">Anreisetag +14€</span>
+        </label>
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
+          <input type="checkbox" id="ne-vabr" ${e.vAbr?'checked':''} style="accent-color:var(--gold);width:16px;height:16px" onchange="updateVerpfPreview()">
+          <span style="font-size:12px;color:var(--text)">Abreisetag +14€</span>
+        </label>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:9px">
+        <div class="fg"><label class="fl">Anreisepauschale (€)</label><input class="fi" type="number" id="ne-anr" value="${e.anr||''}" placeholder="leer = keine" min="0"></div>
+        <div class="fg"><label class="fl">Abreisepauschale (€)</label><input class="fi" type="number" id="ne-abr" value="${e.abr||''}" placeholder="leer = keine" min="0"></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="stitle">Fahrer auswählen</div>
+      ${drivers.map(d=>`<label style="display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:.5px solid var(--border);cursor:pointer">
+        <input type="radio" name="ne-driver" value="${d.email}" ${e.driverId===d.email?'checked':''} style="accent-color:var(--gold)">
+        <span class="dchip"><span class="dava">${d.ini}</span>${d.name}</span>
+      </label>`).join('')}
+      <label style="display:flex;align-items:center;gap:10px;padding:7px 0;cursor:pointer">
+        <input type="radio" name="ne-driver" value="" ${!e.driverId?'checked':''} style="accent-color:var(--gold)">
+        <span style="font-size:12px;color:var(--t3)">Später zuweisen</span>
+      </label>
+    </div>
+    <button class="btn btn-gold" onclick="saveNewEvent(${isEdit?e.id:'null'})">${isEdit?'Änderungen speichern':'Event erstellen &amp; Anfrage senden'}</button>
+  </div>`;
+  updateVerpfPreview();
+}
+function updateVerpfPreview(){
+  const d=parseInt(document.getElementById('ne-days')?.value)||1;
+  const vAnr=document.getElementById('ne-vanr')?.checked||false;
+  const vAbr=document.getElementById('ne-vabr')?.checked||false;
+  const total=calcVerpf(d,vAnr,vAbr);
+  const disp=document.getElementById('ne-days-display');
+  const tot=document.getElementById('ne-verpf-total');
+  const prev=document.getElementById('ne-verpf-preview');
+  if(disp)disp.textContent=d;
+  if(tot)tot.textContent=eur(d*28);
+  if(prev){
+    let parts=[`${d} Einsatztag${d>1?'e':''} × 28,00 € = ${eur(d*28)}`];
+    if(vAnr)parts.push('Anreisetag: +14,00 €');
+    if(vAbr)parts.push('Abreisetag: +14,00 €');
+    parts.push(`Gesamt Verpflegung: ${eur(total)}`);
+    prev.innerHTML=parts.join('<br>');
+  }
+}
+function saveNewEvent(editId){
+  const title=document.getElementById('ne-title').value.trim();
+  if(!title){toast('Bitte Eventname eingeben');return;}
+  const days=parseInt(document.getElementById('ne-days').value)||1;
+  const sel=document.querySelector('input[name="ne-driver"]:checked');
+  const dId=sel?sel.value||null:null;
+  const obj={
+    title,days,
+    dateFrom:document.getElementById('ne-from').value,
+    dateTo:document.getElementById('ne-to').value,
+    extra:parseFloat(document.getElementById('ne-extra').value)||0,
+    pickup:document.getElementById('ne-pickup').value,
+    dropoff:document.getElementById('ne-dropoff').value,
+    client:document.getElementById('ne-client').value,
+    details:document.getElementById('ne-details').value,
+    vAnr:document.getElementById('ne-vanr').checked,
+    vAbr:document.getElementById('ne-vabr').checked,
+    anr:parseFloat(document.getElementById('ne-anr').value)||0,
+    abr:parseFloat(document.getElementById('ne-abr').value)||0,
+    driverId:dId,
+    status:dId?'sent':'open',
+    driverStatus:dId?'pending':null
+  };
+  if(editId){Object.assign(events.find(x=>x.id===editId),obj);}
+  else{obj.id=Date.now();events.push(obj);}
+  toast(editId?'✓ Event aktualisiert':'✓ Event erstellt · Anfrage gesendet');
+  goAdmin('events');
+}
+
+// ══════════════════════════════════════════
+// ADMIN — PLANNING
+// ══════════════════════════════════════════
+function renderPlanning(){
+  const pg=document.getElementById('pg-planning');
+  const unassigned=transfers.filter(t=>!t.driverId);
+  pg.innerHTML=`<div class="sec">
+    ${unassigned.length?`<div class="wbox">⚠ ${unassigned.length} Transfer${unassigned.length>1?'s':''} ohne Fahrerzuweisung</div>`:''}
+    <div class="stitle">Fahrer-Übersicht</div>
+    ${drivers.map(d=>{
+      const devts=events.filter(e=>e.driverId===d.email&&e.status!=='done');
+      const dtr=transfers.filter(t=>t.driverId===d.email);
+      return`<div class="card">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+          <div class="dava" style="width:36px;height:36px;font-size:14px">${d.ini}</div>
+          <div><div style="font-size:13px;font-weight:500">${d.name}</div><div style="font-size:11px;color:var(--t3)">${devts.length} Events · ${dtr.length} Transfers</div></div>
+          <span class="bdg b-done" style="margin-left:auto">Aktiv</span>
+        </div>
+        ${devts.map(e=>`<div style="display:flex;gap:8px;align-items:center;padding:6px 0;border-bottom:.5px solid var(--border)">
+          <div style="font-size:11px;color:var(--gold);min-width:60px">${fmtDateShort(e.dateFrom)}</div>
+          <div style="flex:1"><div style="font-size:12px;font-weight:500">${e.title}</div><div style="font-size:10px;color:var(--t3)">${e.days} Tage Event</div></div>
+          ${statusBadge(e.status)}
+        </div>`).join('')}
+        ${dtr.map(t=>`<div style="display:flex;gap:8px;align-items:center;padding:6px 0;border-bottom:.5px solid var(--border)">
+          <div style="font-size:11px;color:var(--gold);min-width:60px">${fmtDateShort(t.date)} ${t.time}</div>
+          <div style="flex:1"><div style="font-size:12px;font-weight:500">Transfer</div><div style="font-size:10px;color:var(--t3)">${t.from} → ${t.to}</div></div>
+          <span class="bdg ${t.driverConfirmed?'b-done':'b-pend'}">${t.driverConfirmed?'✓ Bestätigt':'Ausstehend'}</span>
+        </div>`).join('')}
+      </div>`;
+    }).join('')}
+    <div class="stitle" style="margin-top:4px">Transfers</div>
+    <button class="btn btn-gold" onclick="goAdmin('new-transfer')" style="margin-bottom:12px">+ Neuer Transfer</button>
+    ${transfers.map(t=>`<div class="card cp" onclick="openTransferEdit(${t.id})">
+      <div class="crow">
+        <div>
+          <div class="ct">${t.from} → ${t.to}</div>
+          <div class="cs">${fmtDate(t.date)} · ${t.time} · ${t.pass}</div>
+          <div style="margin-top:4px">${t.driverId?`<span class="dchip"><span class="dava">${driverIni(t.driverId)}</span>${driverName(t.driverId)}</span>`:'<span style="font-size:11px;color:var(--t3)">Kein Fahrer</span>'}</div>
+        </div>
+        <span class="bdg ${t.driverConfirmed?'b-done':'b-pend'}">${t.driverConfirmed?'✓ Bestätigt':'Ausstehend'}</span>
+      </div>
+    </div>`).join('')}
+  </div>`;
+}
+function openTransferEdit(id){
+  const t=transfers.find(x=>x.id===id);if(!t)return;
+  renderNewTransfer(t);showPage('pg-new-transfer');
+}
+function goAdmin_newTransfer(){renderNewTransfer();showPage('pg-new-transfer');setNavActive('planning');}
+
+// ══════════════════════════════════════════
+// ADMIN — NEW TRANSFER
+// ══════════════════════════════════════════
+function renderNewTransfer(edit){
+  const t=edit||{};
+  const isEdit=!!t.id;
+  const pg=document.getElementById('pg-new-transfer');
+  pg.innerHTML=`
+  <div class="dhdr"><button class="back" onclick="goAdmin('planning')">← Zurück</button><div style="font-size:14px;font-weight:500">${isEdit?'Transfer bearbeiten':'Neuer Transfer'}</div></div>
+  <div class="sec">
+    <div class="card">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:9px">
+        <div class="fg"><label class="fl">Datum</label><input class="fi" type="date" id="nt-date" value="${t.date||''}"></div>
+        <div class="fg"><label class="fl">Uhrzeit</label><input class="fi" type="time" id="nt-time" value="${t.time||''}"></div>
+      </div>
+      <div class="fg" style="margin-bottom:9px"><label class="fl">Von</label><input class="fi" id="nt-from" value="${t.from||''}" placeholder="Abholort"></div>
+      <div class="fg" style="margin-bottom:9px"><label class="fl">Nach</label><input class="fi" id="nt-to" value="${t.to||''}" placeholder="Zielort"></div>
+      <div class="fg" style="margin-bottom:9px"><label class="fl">Passagier / Kunde</label><input class="fi" id="nt-pass" value="${t.pass||''}" placeholder="Name"></div>
+      <div class="fg" style="margin-bottom:9px"><label class="fl">Telefon Kunde</label><input class="fi" id="nt-contact" value="${t.contact||''}" placeholder="+49 ..."></div>
+      <div class="fg" style="margin-bottom:9px"><label class="fl">Fahrzeug</label><input class="fi" id="nt-veh" value="${t.veh||''}" placeholder="Mercedes V-Klasse ..."></div>
+    </div>
+    <div class="card">
+      <div class="stitle">Anreise-Info</div>
+      <div class="fg" style="margin-bottom:9px"><label class="fl">Typ</label>
+        <select class="fsel" id="nt-type" onchange="toggleNtType()">
+          <option value="">– keine –</option>
+          <option value="flight" ${t.type==='flight'?'selected':''}>Flug</option>
+          <option value="train" ${t.type==='train'?'selected':''}>Zug</option>
+          <option value="other" ${t.type==='other'?'selected':''}>Sonstiges</option>
+        </select>
+      </div>
+      <div id="nt-flight" style="display:${t.type==='flight'?'block':'none'}">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:9px">
+          <div class="fg"><label class="fl">Flugnummer</label><input class="fi" id="nt-flno" value="${t.flightno||''}" placeholder="LH 123"></div>
+          <div class="fg"><label class="fl">Ankunft</label><input class="fi" type="time" id="nt-ftime" value="${t.ftime||''}"></div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:9px">
+          <div class="fg"><label class="fl">Terminal</label><input class="fi" id="nt-term" value="${t.term||''}" placeholder="T1, T2 ..."></div>
+          <div class="fg"><label class="fl">Von Flughafen</label><input class="fi" id="nt-fap" value="${t.fap||''}" placeholder="MUC, FRA ..."></div>
+        </div>
+      </div>
+      <div id="nt-train" style="display:${t.type==='train'?'block':'none'}">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:9px">
+          <div class="fg"><label class="fl">Zugnummer</label><input class="fi" id="nt-trno" value="${t.trainno||''}" placeholder="ICE 593"></div>
+          <div class="fg"><label class="fl">Ankunft</label><input class="fi" type="time" id="nt-ttime" value="${t.traintime||''}"></div>
+        </div>
+        <div class="fg" style="margin-bottom:9px"><label class="fl">Gleis</label><input class="fi" id="nt-plat" value="${t.platform||''}" placeholder="Gleis 7"></div>
+      </div>
+      <div class="fg" style="margin-bottom:9px"><label class="fl">Notiz für Fahrer</label><textarea class="fta" id="nt-note">${t.note||''}</textarea></div>
+    </div>
+    <div class="card">
+      <div class="stitle">Fahrer zuweisen</div>
+      ${drivers.map(d=>`<label style="display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:.5px solid var(--border);cursor:pointer">
+        <input type="radio" name="nt-driver" value="${d.email}" ${t.driverId===d.email?'checked':''} style="accent-color:var(--gold)">
+        <span class="dchip"><span class="dava">${d.ini}</span>${d.name}</span>
+      </label>`).join('')}
+      <label style="display:flex;align-items:center;gap:10px;padding:7px 0;cursor:pointer">
+        <input type="radio" name="nt-driver" value="" ${!t.driverId?'checked':''} style="accent-color:var(--gold)">
+        <span style="font-size:12px;color:var(--t3)">Später zuweisen</span>
+      </label>
+    </div>
+    <button class="btn btn-gold" onclick="saveTransfer(${isEdit?t.id:'null'})">Transfer ${isEdit?'aktualisieren':'speichern &amp; Fahrer informieren'}</button>
+  </div>`;
+}
+function toggleNtType(){
+  const v=document.getElementById('nt-type').value;
+  document.getElementById('nt-flight').style.display=v==='flight'?'block':'none';
+  document.getElementById('nt-train').style.display=v==='train'?'block':'none';
+}
+function saveTransfer(editId){
+  const sel=document.querySelector('input[name="nt-driver"]:checked');
+  const obj={
+    date:document.getElementById('nt-date').value,
+    time:document.getElementById('nt-time').value,
+    from:document.getElementById('nt-from').value,
+    to:document.getElementById('nt-to').value,
+    pass:document.getElementById('nt-pass').value,
+    contact:document.getElementById('nt-contact').value,
+    veh:document.getElementById('nt-veh').value,
+    type:document.getElementById('nt-type').value,
+    flightno:document.getElementById('nt-flno')?.value||'',
+    ftime:document.getElementById('nt-ftime')?.value||'',
+    term:document.getElementById('nt-term')?.value||'',
+    fap:document.getElementById('nt-fap')?.value||'',
+    trainno:document.getElementById('nt-trno')?.value||'',
+    traintime:document.getElementById('nt-ttime')?.value||'',
+    platform:document.getElementById('nt-plat')?.value||'',
+    note:document.getElementById('nt-note').value,
+    driverId:sel?sel.value||null:null,
+    status:'assigned',driverConfirmed:false
+  };
+  if(editId){Object.assign(transfers.find(x=>x.id===editId),obj);}
+  else{obj.id=Date.now();transfers.push(obj);}
+  toast(editId?'✓ Transfer aktualisiert':'✓ Transfer gespeichert');
+  goAdmin('planning');
+}
+
+// ══════════════════════════════════════════
+// ADMIN — TIMES
+// ══════════════════════════════════════════
+function renderTimesAdmin(){
+  const pg=document.getElementById('pg-times-admin');
+  const pending=timeEntries.filter(t=>t.adminStatus==='pending');
+  pg.innerHTML=`<div class="sec">
+    ${pending.length?`<div class="wbox">⚠ ${pending.length} Zeiteintrag${pending.length>1?'e':''} zur Bestätigung ausstehend</div>`:''}
+    ${drivers.map(d=>{
+      const ents=timeEntries.filter(t=>t.driverId===d.email);
+      return`<div class="card" style="margin-bottom:12px">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+          <div class="dava">${d.ini}</div>
+          <div style="font-size:13px;font-weight:500">${d.name}</div>
+        </div>
+        ${ents.map(e=>`<div style="display:flex;justify-content:space-between;align-items:flex-start;padding:7px 0;border-bottom:.5px solid var(--border)">
+          <div>
+            <div style="font-size:12px;font-weight:500">${fmtDate(e.date)}</div>
+            <div style="font-size:11px;color:var(--t2)">${e.start} – ${e.end} · <span style="color:var(--gold)">${fmtMin(e.min)}</span></div>
+            ${e.astart!==e.start?`<div style="font-size:10px;color:var(--t3)">Tats.: ${e.astart} – ${e.aend}</div>`:''}
+            <div style="margin-top:4px">
+              <span class="bdg ${e.driverStatus==='confirmed'?'b-done':'b-pend'}" style="font-size:9px">Fahrer: ${e.driverStatus==='confirmed'?'✓ bestätigt':'ausstehend'}</span>
+              <span class="bdg ${e.adminStatus==='confirmed'?'b-done':'b-pend'}" style="font-size:9px;margin-left:4px">Admin: ${e.adminStatus==='confirmed'?'✓ bestätigt':'ausstehend'}</span>
+            </div>
+          </div>
+          ${e.adminStatus==='pending'?`<button class="btn-sm" style="background:rgba(29,158,117,.15);color:var(--green);border:.5px solid rgba(29,158,117,.3);padding:6px 10px;flex:0" onclick="adminConfirmTime(${e.id})">✓ Bestätigen</button>`:''}
+        </div>`).join('')}
+        ${!ents.length?'<div style="font-size:12px;color:var(--t3);padding:6px 0">Keine Einträge</div>':''}
+      </div>`;
+    }).join('')}
+    <button class="btn btn-green" onclick="adminConfirmAllTimes()">Alle ausstehenden bestätigen</button>
+  </div>`;
+}
+function adminConfirmTime(id){
+  const e=timeEntries.find(x=>x.id===id);if(e){e.adminStatus='confirmed';}
+  renderTimesAdmin();toast('✓ Zeiteintrag bestätigt');
+}
+function adminConfirmAllTimes(){
+  timeEntries.filter(t=>t.adminStatus==='pending').forEach(t=>t.adminStatus='confirmed');
+  renderTimesAdmin();toast('✓ Alle Zeiteinträge bestätigt');
+}
+
+// ══════════════════════════════════════════
+// ADMIN — DRIVERS
+// ══════════════════════════════════════════
+function renderDrivers(){
+  const pg=document.getElementById('pg-drivers');
+  pg.innerHTML=`<div class="sec">
+    <div class="stitle">Neuen Fahrer anlegen</div>
+    <div class="card">
+      <div class="fg" style="margin-bottom:9px"><label class="fl">Name</label><input class="fi" id="nd-name" placeholder="Max Mustermann"></div>
+      <div class="fg" style="margin-bottom:9px"><label class="fl">E-Mail</label><input class="fi" type="email" id="nd-email" placeholder="fahrer@elbdrop.com"></div>
+      <div class="fg" style="margin-bottom:11px"><label class="fl">Passwort</label><input class="fi" type="password" id="nd-pwd" placeholder="Temporäres Passwort"></div>
+      <button class="btn btn-gold" onclick="addDriver()">Fahrer anlegen &amp; Einladung senden</button>
+    </div>
+    <div class="stitle" style="margin-top:4px">Registrierte Fahrer</div>
+    ${drivers.map(d=>`<div class="card">
+      <div style="display:flex;align-items:center;gap:10px">
+        <div class="dava" style="width:40px;height:40px;font-size:15px">${d.ini}</div>
+        <div style="flex:1">
+          <div style="font-size:13px;font-weight:500">${d.name}</div>
+          <div style="font-size:11px;color:var(--t3)">${d.email}</div>
+        </div>
+        <span class="bdg b-done">${d.status}</span>
+      </div>
+    </div>`).join('')}
+  </div>`;
+}
+function addDriver(){
+  const n=document.getElementById('nd-name').value.trim();
+  const e=document.getElementById('nd-email').value.trim().toLowerCase();
+  const p=document.getElementById('nd-pwd').value;
+  if(!n||!e||!p){toast('Bitte alle Felder ausfüllen');return;}
+  drivers.push({name:n,email:e,ini:n.split(' ').map(x=>x[0]).join('').toUpperCase().slice(0,2),status:'aktiv'});
+  USERS[e]={pwd:p,role:'driver',name:n,ini:n.split(' ').map(x=>x[0]).join('').toUpperCase().slice(0,2)};
+  document.getElementById('nd-name').value='';
+  document.getElementById('nd-email').value='';
+  document.getElementById('nd-pwd').value='';
+  renderDrivers();toast('✓ Fahrer angelegt · Einladungs-E-Mail gesendet');
+}
+
+// ══════════════════════════════════════════
+// DRIVER — OVERVIEW (Events)
+// ══════════════════════════════════════════
+let ovTab='new';
+function renderOverview(){
+  const myEvents=events.filter(e=>e.driverId===CU.email);
+  const newEvs=myEvents.filter(e=>e.driverStatus==='pending');
+  const confEvs=myEvents.filter(e=>e.driverStatus==='accepted'&&e.status!=='done');
+  const doneEvs=myEvents.filter(e=>e.status==='done');
+  const pg=document.getElementById('pg-overview');
+  pg.innerHTML=`
+  <div class="tabs" style="padding:0 18px">
+    <button class="tab ${ovTab==='new'?'on':''}" onclick="setOvTab('new')">Anfragen <span class="bdg b-red" style="margin-left:3px">${newEvs.length}</span></button>
+    <button class="tab ${ovTab==='conf'?'on':''}" onclick="setOvTab('conf')">Bestätigt</button>
+    <button class="tab ${ovTab==='done'?'on':''}" onclick="setOvTab('done')">Vergangen</button>
+  </div>
+  <div class="sec" id="ov-list"></div>`;
+  renderOvList(newEvs,confEvs,doneEvs);
+}
+function setOvTab(t){ovTab=t;renderOverview();}
+function renderOvList(ne,ce,de){
+  const list=document.getElementById('ov-list');if(!list)return;
+  const arr=ovTab==='new'?ne:ovTab==='conf'?ce:de;
+  if(!arr.length){list.innerHTML='<div style="color:var(--t3);font-size:13px;padding:10px 0">Keine Einträge</div>';return;}
+  list.innerHTML=arr.map(e=>{
+    const c=calcEvent(e);
+    const btns=ovTab==='new'?`<div style="display:flex;gap:7px;margin-top:9px">
+      <button class="btn-sm" style="background:rgba(29,158,117,.15);color:var(--green);border:.5px solid rgba(29,158,117,.3);flex:2" onclick="driverRespondEvent(${e.id},'accept')">✓ Annehmen</button>
+      <button class="btn-sm" style="background:rgba(226,75,74,.08);color:var(--red);border:.5px solid rgba(226,75,74,.3)" onclick="driverRespondEvent(${e.id},'decline')">Ablehnen</button>
+    </div>`:'';
+    return`<div class="card cp" onclick="openDriverEventDetail(${e.id})">
+      <div class="crow">
+        <div>
+          <div class="ct">${e.title}</div>
+          <div class="cs">📅 ${fmtDate(e.dateFrom)} – ${fmtDate(e.dateTo)}</div>
+          <div style="font-size:11px;color:var(--t3);margin-top:1px">${e.days} Tag${e.days>1?'e':''} · ${c.totalH}h · Ges. ${eur(c.total)}</div>
+        </div>
+        ${statusBadge(e.driverStatus||e.status)}
+      </div>
+      ${btns}
+    </div>`;
+  }).join('');
+}
+function driverRespondEvent(id,resp){
+  const e=events.find(x=>x.id===id);if(!e)return;
+  e.driverStatus=resp==='accept'?'accepted':'declined';
+  if(resp==='accept'&&e.status==='sent')e.status='confirmed';
+  renderOverview();toast(resp==='accept'?'✓ Event angenommen · Admin informiert':'Event abgelehnt');
+}
+function openDriverEventDetail(id){
+  const e=events.find(x=>x.id===id);if(!e)return;
+  const c=calcEvent(e);
+  const pg=document.getElementById('pg-order-detail');
+  pg.innerHTML=detailHdr(e.title,`goDriver('overview')`)+`
+  <div class="sec">
+    <div class="card">
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px">
+        <span class="bdg b-gold">📅 ${fmtDate(e.dateFrom)}</span>
+        <span class="bdg b-gold">bis ${fmtDate(e.dateTo)}</span>
+        <span class="bdg b-gold">${e.days} Tag${e.days>1?'e':''} · ${c.totalH}h</span>
+      </div>
+      <div style="font-size:12px;color:var(--t2);margin-bottom:8px;line-height:1.6">${e.details}</div>
+      <div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:.5px solid var(--border)"><span style="font-size:11px;color:var(--t2)">Abholung</span><span style="font-size:11px;font-weight:500">${e.pickup}</span></div>
+      <div style="display:flex;justify-content:space-between;padding:5px 0"><span style="font-size:11px;color:var(--t2)">Ziel</span><span style="font-size:11px;font-weight:500">${e.dropoff}</span></div>
+    </div>
+    <div class="card">
+      <div class="stitle">Vergütungsübersicht</div>
+      <div class="amr"><div><span class="aml">Garantierte Vergütung</span><div style="font-size:10px;color:var(--t3)">${e.days} T × ${GH}h × ${eur(HR)}</div></div><span class="amv">${eur(c.guarPay)}</span></div>
+      ${c.extraPay?`<div class="amr"><div><span class="aml">Überstunden</span><div style="font-size:10px;color:var(--t3)">${e.extra}h × ${eur(HR)}</div></div><span class="amv">${eur(c.extraPay)}</span></div>`:''}
+      <div class="amr"><div><span class="aml">Verpflegungspauschale</span><div style="font-size:10px;color:var(--t3)">${e.days===1?'1 Reisetag: 14,00 €':e.days===2?'2 Reisetage: 2 × 14,00 €':`${e.days-2} Volltag${e.days-2>1?'e':''} (28€) + 2 Reisetage (14€)`}</div></div><span class="amv">${eur(c.verpf)}</span></div>
+      ${e.anr?`<div class="amr"><span class="aml">Anreisepauschale</span><span class="amv">${eur(e.anr)}</span></div>`:''}
+      ${e.abr?`<div class="amr"><span class="aml">Abreisepauschale</span><span class="amv">${eur(e.abr)}</span></div>`:''}
+      <div class="dvd"></div>
+      <div class="amr"><span class="aml" style="font-weight:500;color:var(--text)">Gesamtbetrag</span><span style="font-size:17px;font-weight:500;color:var(--gold)">${eur(c.total)}</span></div>
+    </div>
+    ${e.driverStatus==='pending'?`
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:9px">
+      <button class="btn btn-danger" onclick="driverRespondEvent(${e.id},'decline');goDriver('overview')">Ablehnen</button>
+      <button class="btn btn-gold" onclick="driverRespondEvent(${e.id},'accept');goDriver('overview')">✓ Annehmen</button>
+    </div>
+    <div class="cnote">Nach deiner Annahme wird der Admin informiert und gibt den Einsatz final frei.</div>`:''}
+  </div>`;
+  showPage('pg-order-detail');
+}
+
+// ══════════════════════════════════════════
+// DRIVER — TRANSFERS (Rides)
+// ══════════════════════════════════════════
+function renderRides(){
+  const myT=transfers.filter(t=>t.driverId===CU.email);
+  const today=new Date().toISOString().split('T')[0];
+  const todayT=myT.filter(t=>t.date===today);
+  const upcoming=myT.filter(t=>t.date>today);
+  const pg=document.getElementById('pg-rides');
+  pg.innerHTML=`<div class="sec">
+    <div class="stitle">Heutige Transfers</div>
+    ${todayT.length?todayT.map(t=>transferCard(t)).join(''):'<div style="color:var(--t3);font-size:13px;padding:6px 0">Keine Transfers heute</div>'}
+    <div class="stitle" style="margin-top:8px">Kommende Transfers</div>
+    ${upcoming.length?upcoming.map(t=>transferCard(t)).join(''):'<div style="color:var(--t3);font-size:13px;padding:6px 0">Keine kommenden Transfers</div>'}
+  </div>`;
+}
+function transferCard(t){
+  const fi=t.type==='flight'&&t.flightno?`<div class="fbox" style="margin-top:8px">
+    <div><div class="fbox-lbl">Flug</div><div class="fbox-val" style="color:var(--gold2)">${t.flightno}</div></div>
+    <div><div class="fbox-lbl">Ankunft</div><div class="fbox-val">${t.ftime||'–'}</div></div>
+    <div><div class="fbox-lbl">Terminal</div><div class="fbox-val">${t.term||'–'}</div></div>
+    <div><div class="fbox-lbl">Von</div><div class="fbox-val">${t.fap||'–'}</div></div>
+  </div>`:'';
+  const ti=t.type==='train'&&t.trainno?`<div class="fbox" style="margin-top:8px">
+    <div><div class="fbox-lbl">Zug</div><div class="fbox-val" style="color:var(--gold2)">${t.trainno}</div></div>
+    <div><div class="fbox-lbl">Ankunft</div><div class="fbox-val">${t.traintime||'–'}</div></div>
+    <div><div class="fbox-lbl">Gleis</div><div class="fbox-val">${t.platform||'–'}</div></div>
+  </div>`:'';
+  return`<div class="card">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:9px">
+      <span style="font-size:20px;font-weight:300;color:var(--gold)">${t.time}</span>
+      <span class="bdg b-gold">${t.veh}</span>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:3px">
+      <div style="display:flex;gap:8px;align-items:flex-start"><div class="route-up"></div><div><div style="font-size:12px;font-weight:500">${t.from}</div><div style="font-size:10px;color:var(--t3)">Abholung</div></div></div>
+      <div class="route-line"></div>
+      <div style="display:flex;gap:8px;align-items:flex-start"><div class="route-dn"></div><div><div style="font-size:12px;font-weight:500">${t.to}</div><div style="font-size:10px;color:var(--t3)">Ziel</div></div></div>
+    </div>
+    ${fi}${ti}
+    <div class="dvd"></div>
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <div style="font-size:11px;color:var(--t2)">Passagier: <b style="color:var(--text)">${t.pass}</b></div>
+      ${t.contact?`<div style="font-size:11px;color:var(--gold2)">${t.contact}</div>`:''}
+    </div>
+    ${t.note?`<div style="margin-top:6px;font-size:11px;color:var(--t2);border-left:2px solid var(--gold);padding-left:8px">${t.note}</div>`:''}
+    <div style="margin-top:8px;display:flex;gap:7px;align-items:center">
+      <span class="bdg ${t.driverConfirmed?'b-done':'b-pend'}">${t.driverConfirmed?'✓ Eingang bestätigt':'Eingang ausstehend'}</span>
+      ${!t.driverConfirmed?`<button class="btn-sm" style="background:rgba(29,158,117,.15);color:var(--green);border:.5px solid rgba(29,158,117,.3);flex:0;padding:5px 10px" onclick="confirmTransferReceipt(${t.id})">✓ Eingang bestätigen</button>`:''}
+    </div>
+  </div>`;
+}
+function confirmTransferReceipt(id){
+  const t=transfers.find(x=>x.id===id);if(t)t.driverConfirmed=true;
+  renderRides();toast('✓ Transfer-Eingang bestätigt · Admin informiert');
+}
+
+// ══════════════════════════════════════════
+// DRIVER — TIMES
+// ══════════════════════════════════════════
+function renderTimes(){
+  const myT=timeEntries.filter(t=>t.driverId===CU.email);
+  const pg=document.getElementById('pg-times');
+  pg.innerHTML=`
+  <div style="text-align:center;padding:22px 18px 14px">
+    <div class="tbig" id="clk">00:00:00</div>
+    <div style="font-size:11px;color:var(--t3);margin-top:3px" id="clkDate"></div>
+    <div style="margin-top:8px"><div class="tstat ${svcRunning?'ts-on':'ts-off'}" id="tstat">${svcRunning?'Dienst aktiv · Abrechnung läuft':'Kein aktiver Dienst'}</div></div>
+  </div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:0 18px 16px">
+    <button class="btn ${svcRunning?'btn-outline':'btn-gold'}" id="btnS" ${svcRunning?'disabled style="opacity:.4"':''} onclick="timeAction('start')">Dienstbeginn</button>
+    <button class="btn btn-outline" onclick="timeAction('end')">Dienstende</button>
+  </div>
+  <div class="sec" style="padding-top:0">
+    <div class="stitle">Diese Woche</div>
+    ${myT.map(e=>`<div class="card">
+      <div class="crow">
+        <div>
+          <div class="ct" style="font-size:13px">${fmtDate(e.date)}</div>
+          <div class="cs">${e.start} – ${e.end} · <span style="color:var(--gold)">${fmtMin(e.min)}</span></div>
+          ${e.astart!==e.start?`<div style="font-size:10px;color:var(--t3)">Tatsächlich: ${e.astart} – ${e.aend}</div>`:''}
+          <div style="margin-top:5px;display:flex;gap:5px;flex-wrap:wrap">
+            <span class="bdg ${e.adminStatus==='confirmed'?'b-done':'b-pend'}" style="font-size:9px">Admin: ${e.adminStatus==='confirmed'?'✓':'ausstehend'}</span>
+            <span class="bdg ${e.driverStatus==='confirmed'?'b-done':'b-pend'}" style="font-size:9px">Fahrer: ${e.driverStatus==='confirmed'?'✓':'ausstehend'}</span>
+          </div>
+        </div>
+        ${e.adminStatus==='confirmed'&&e.driverStatus!=='confirmed'?
+          `<button class="btn-sm" style="background:rgba(29,158,117,.15);color:var(--green);border:.5px solid rgba(29,158,117,.3);flex:0;padding:5px 10px" onclick="driverConfirmTime(${e.id})">✓ Bestätigen</button>`:''}
+      </div>
+    </div>`).join('')}
+  </div>`;
+}
+function timeAction(type){
+  const now=new Date();
+  if(type==='start'&&!svcRunning){
+    svcRunning=true;svcStart=now;
+    const rs=rndStart(new Date(now));
+    document.getElementById('tstat').className='tstat ts-on';
+    document.getElementById('tstat').textContent='Dienst aktiv · Abrechnung ab '+fmtT(rs)+' Uhr';
+    document.getElementById('btnS').disabled=true;document.getElementById('btnS').style.opacity='0.4';
+    toast('Dienst gestartet · Abrechnung ab '+fmtT(rs)+' Uhr');
+  } else if(type==='end'&&svcRunning){
+    svcRunning=false;
+    const rs=rndStart(new Date(svcStart)),re=rndEnd(new Date(now));
+    const min=Math.round((re-rs)/60000);
+    const today=now.toISOString().split('T')[0];
+    timeEntries.unshift({id:Date.now(),driverId:CU.email,date:today,start:fmtT(rs),end:fmtT(re),astart:fmtT(svcStart),aend:fmtT(now),min,adminStatus:'pending',driverStatus:'submitted'});
+    renderTimes();toast('Dienst beendet · '+fmtT(rs)+' – '+fmtT(re));
+  }
+}
+function driverConfirmTime(id){
+  const e=timeEntries.find(x=>x.id===id);if(e)e.driverStatus='confirmed';
+  renderTimes();toast('✓ Zeiteintrag von dir bestätigt');
+}
+function startClock(){
+  if(clockInt)clearInterval(clockInt);
+  clockInt=setInterval(()=>{
+    const n=new Date();
+    const el=document.getElementById('clk');
+    const del=document.getElementById('clkDate');
+    if(el)el.textContent=String(n.getHours()).padStart(2,'0')+':'+String(n.getMinutes()).padStart(2,'0')+':'+String(n.getSeconds()).padStart(2,'0');
+    if(del)del.textContent=n.toLocaleDateString('de-DE',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+  },1000);
+}
+
+// ══════════════════════════════════════════
+// DRIVER — RECEIPTS
+// ══════════════════════════════════════════
+function renderReceipts(){
+  const pg=document.getElementById('pg-receipts');
+  const myR=receipts.filter(r=>r.driverId===CU.email);
+  pg.innerHTML=`<div class="sec">
+    <input type="file" id="file-input2" accept="image/*,application/pdf" capture="environment" style="display:none">
+    <div class="sbtn" id="scan-trigger">
+      <div style="font-size:28px;margin-bottom:6px">📷</div>
+      <div style="font-size:12px;color:var(--gold2);font-weight:500">Quittung scannen / hochladen</div>
+      <div style="font-size:10px;color:var(--t3);margin-top:2px">Kamera · Galerie · PDF · Automatisch erfassen</div>
+    </div>
+  </div>
+  <div class="sec" style="padding-top:0">
+    <div class="stitle">Erfasste Quittungen</div>
+    ${myR.length?myR.map(r=>`<div class="card">
+      <div class="crow">
+        <div><div class="ct">${r.desc}</div><div class="cs">${r.date}${r.eventTitle?` · ${r.eventTitle}`:''}</div></div>
+        <div style="text-align:right"><div style="font-size:15px;font-weight:500;color:var(--gold)">${eur(r.amt)}</div><span class="bdg b-done" style="margin-top:3px;display:block">Erfasst</span></div>
+      </div>
+      <div style="margin-top:8px;display:flex;gap:7px">
+        <button class="btn-sm" style="background:var(--gbg);color:var(--gold2);border:.5px solid rgba(201,168,76,.3)" onclick="openRecPDF(${r.id})">📄 PDF öffnen</button>
+        <button class="btn-sm" style="background:var(--bg4);color:var(--t2);border:.5px solid var(--border2)" onclick="dlRecPDF(${r.id})">⬇ Download</button>
+      </div>
+    </div>`).join(''):'<div style="color:var(--t3);font-size:13px;padding:6px 0">Noch keine Quittungen erfasst</div>'}
+  </div>`;
+  document.getElementById('scan-trigger').onclick=()=>document.getElementById('file-input2').click();
+  document.getElementById('file-input2').onchange=function(){if(this.files&&this.files[0])openScanModal(this.files[0]);};
+}
+function openScanModal(file){
+  // populate event dropdown
+  const sel=document.getElementById('scan-event');
+  sel.innerHTML='<option value="">– keinem Event zuordnen –</option>';
+  events.filter(e=>e.driverId===CU.email).forEach(e=>{
+    const opt=document.createElement('option');opt.value=e.id;opt.textContent=e.title;sel.appendChild(opt);
+  });
+  document.getElementById('scan-dt').value=new Date().toISOString().split('T')[0];
+  document.getElementById('scan-amt').value='';
+  document.getElementById('scan-desc').value='';
+  if(file.type.startsWith('image/')){
+    const rd=new FileReader();rd.onload=ev=>{document.getElementById('scan-img').src=ev.target.result;document.getElementById('scan-prev').style.display='block';};rd.readAsDataURL(file);
+  } else {document.getElementById('scan-prev').style.display='none';}
+  openModal('mod-scan');
+  document.getElementById('file-input2').value='';
+}
+document.getElementById('scan-save').onclick=function(){
+  const amt=parseFloat(document.getElementById('scan-amt').value.replace(',','.'))||0;
+  const dt=document.getElementById('scan-dt').value;
+  const desc=document.getElementById('scan-desc').value||'Quittung';
+  const evId=parseInt(document.getElementById('scan-event').value)||null;
+  const ev=evId?events.find(x=>x.id===evId):null;
+  receipts.unshift({id:Date.now(),driverId:CU.email,desc,date:dt?new Date(dt).toLocaleDateString('de-DE'):'–',amt,eventId:evId,eventTitle:ev?ev.title:null});
+  closeModal('mod-scan');renderReceipts();toast('✓ Quittung gespeichert');
+};
+function genRecPDF(r){
+  const {jsPDF}=window.jspdf;const doc=new jsPDF();
+  doc.setFont('helvetica','bold');doc.setFontSize(18);doc.setTextColor(201,168,76);
+  doc.text('elbdrop MoveMents',20,22);
+  doc.setFontSize(11);doc.setTextColor(100,100,100);doc.setFont('helvetica','normal');
+  doc.text('Quittungsbeleg',20,30);doc.setDrawColor(200,200,200);doc.line(20,34,190,34);
+  doc.setFontSize(12);doc.setTextColor(60,60,60);
+  doc.text('Beschreibung:',20,46);doc.setFont('helvetica','bold');doc.text(r.desc,80,46);
+  doc.setFont('helvetica','normal');doc.text('Datum:',20,56);doc.setFont('helvetica','bold');doc.text(r.date,80,56);
+  doc.setFont('helvetica','normal');doc.text('Betrag:',20,66);doc.setFont('helvetica','bold');doc.setTextColor(180,130,50);doc.text(eur(r.amt),80,66);
+  if(r.eventTitle){doc.setTextColor(60,60,60);doc.setFont('helvetica','normal');doc.text('Event:',20,76);doc.setFont('helvetica','bold');doc.text(r.eventTitle,80,76);}
+  doc.setFontSize(9);doc.setTextColor(150,150,150);doc.setFont('helvetica','normal');
+  doc.text('elbdrop MoveMents · info@elbdrop.com · Hamburg',20,285);return doc;
+}
+function openRecPDF(id){const r=receipts.find(x=>x.id===id);if(!r)return;window.open(genRecPDF(r).output('bloburl'),'_blank');}
+function dlRecPDF(id){const r=receipts.find(x=>x.id===id);if(!r)return;genRecPDF(r).save('quittung_'+id+'.pdf');toast('✓ PDF heruntergeladen');}
+
+// ══════════════════════════════════════════
+// DRIVER — BILLING
+// ══════════════════════════════════════════
+function renderBilling(){
+  const pg=document.getElementById('pg-billing');
+  const sm={ready:{l:'Bereit',c:'b-gold'},processing:{l:'In Bearbeitung',c:'b-pend'},paid:{l:'Bezahlt',c:'b-done'}};
+  const pm={ready:33,processing:66,paid:100};
+  pg.innerHTML=`<div class="sec">
+    <div class="stitle">Events &amp; Abrechnungen</div>
+    ${billingItems.filter(b=>b.driverId===CU.email).map(b=>{
+      const ev=events.find(e=>e.id===b.eventId)||{};
+      const c=calcEvent(ev);
+      const myR=receipts.filter(r=>r.eventId===b.eventId&&r.driverId===CU.email);
+      const auslagen=myR.reduce((s,r)=>s+r.amt,0);
+      const netto19=c.total;const mwst=netto19*.19;const brutto19=netto19+mwst;
+      const total=brutto19+auslagen;
+      return`<div class="card cp" onclick="openBillingDetail(${b.id})">
+        <div class="crow" style="margin-bottom:8px">
+          <div>
+            <div class="ct">${b.event}</div>
+            <div class="cs">${ev.days||0} Tag${(ev.days||0)>1?'e':''} · ${c.totalH||0}h</div>
+            <div style="font-size:18px;font-weight:300;color:var(--gold);margin-top:4px">${eur(total)}</div>
+          </div>
+          <span class="bdg ${sm[b.status].c}">${sm[b.status].l}</span>
+        </div>
+        <div class="ptr"><div class="pb" style="width:${pm[b.status]}%"></div></div>
+        <div class="plbl"><span>Bereit</span><span>Bearbeitung</span><span>Bezahlt</span></div>
+        <div style="margin-top:7px;font-size:10px;color:var(--gold)">→ Details &amp; PDF öffnen</div>
+      </div>`;
+    }).join('')}
+    ${!billingItems.filter(b=>b.driverId===CU.email).length?'<div style="color:var(--t3);font-size:13px;padding:6px 0">Keine Abrechnungen vorhanden</div>':''}
+  </div>`;
+}
+function openBillingDetail(id){
+  const b=billingItems.find(x=>x.id===id);if(!b)return;
+  const ev=events.find(e=>e.id===b.eventId)||{};
+  const c=calcEvent(ev);
+  const myR=receipts.filter(r=>r.eventId===b.eventId&&r.driverId===CU.email);
+  const auslagen=myR.reduce((s,r)=>s+r.amt,0);
+  const netto19=c.total;const mwst=netto19*.19;const brutto19=netto19+mwst;
+  const rechnungstotal=brutto19+auslagen;
+  const twMin=timeEntries.filter(t=>t.driverId===CU.email).reduce((s,t)=>s+t.min,0);
+  const pg=document.getElementById('pg-billing-detail');
+  const recRows=myR.map(r=>`<div class="amr"><span class="aml">📎 ${r.desc}</span><span class="amv">${eur(r.amt)}</span></div>`).join('');
+  pg.innerHTML=detailHdr(b.event,`goDriver('billing')`)+`
+  <div class="sec">
+    <div class="card">
+      <div class="stitle">Zeitübersicht</div>
+      <div class="amr"><span class="aml">Einsatztage</span><span class="amv">${ev.days||0} Tag${(ev.days||0)>1?'e':''}</span></div>
+      <div class="amr"><span class="aml">Garantierte Stunden</span><span class="amv">${ev.days||0} × ${GH}h = ${(ev.days||0)*GH}h</span></div>
+      ${ev.extra?`<div class="amr"><span class="aml">Überstunden</span><span class="amv">+${ev.extra}h</span></div>`:''}
+      <div class="amr"><span class="aml" style="font-weight:500;color:var(--text)">Gesamtstunden</span><span style="font-size:14px;font-weight:500;color:var(--gold2)">${c.totalH}h</span></div>
+      <div class="amr"><span class="aml">Erfasste Gesamtstunden</span><span style="font-size:12px;color:var(--t2)">${fmtMin(twMin)}</span></div>
+    </div>
+    <div class="card">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px"><div class="stitle" style="margin:0">Leistungen</div><span class="bdg b-pend" style="font-size:10px">19% MwSt.</span></div>
+      <div class="amr"><div><span class="aml">Garantierte Vergütung</span><div style="font-size:10px;color:var(--t3)">${(ev.days||0)*GH}h × ${eur(HR)}</div></div><span class="amv">${eur(c.guarPay)}</span></div>
+      ${c.extraPay?`<div class="amr"><div><span class="aml">Überstunden</span><div style="font-size:10px;color:var(--t3)">${ev.extra}h × ${eur(HR)}</div></div><span class="amv">${eur(c.extraPay)}</span></div>`:''}
+      <div class="amr"><div><span class="aml">Verpflegungspauschale</span><div style="font-size:10px;color:var(--t3)">${ev.days===1?'1 Reisetag (14€)':ev.days===2?'2 Reisetage (14€+14€)':`${ev.days-2} Volltag${ev.days-2>1?'e':''} (28€) + 2 Reisetage (14€)`}</div></div><span class="amv">${eur(c.verpf)}</span></div>
+      ${ev.anr?`<div class="amr"><span class="aml">Anreisepauschale</span><span class="amv">${eur(ev.anr)}</span></div>`:''}
+      ${ev.abr?`<div class="amr"><span class="aml">Abreisepauschale</span><span class="amv">${eur(ev.abr)}</span></div>`:''}
+      <div class="dvd"></div>
+      <div class="amr"><span class="aml">Nettobetrag</span><span class="amv">${eur(netto19)}</span></div>
+      <div class="amr"><span class="aml">zzgl. 19% MwSt.</span><span class="amv">${eur(mwst)}</span></div>
+      <div class="amr"><span class="aml" style="font-weight:500;color:var(--text)">Bruttobetrag</span><span style="font-size:15px;font-weight:500;color:var(--gold)">${eur(brutto19)}</span></div>
+    </div>
+    ${auslagen>0?`<div class="card" style="border-color:rgba(29,158,117,.25)">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px"><div class="stitle" style="margin:0">Auslagen</div><span class="bdg b-done" style="font-size:10px">0% MwSt. / steuerfrei</span></div>
+      ${recRows}
+      <div class="dvd"></div>
+      <div class="amr"><span class="aml" style="font-weight:500;color:var(--text)">Auslagen gesamt</span><span style="font-size:15px;font-weight:500;color:var(--green)">${eur(auslagen)}</span></div>
+      <div class="cnote">„Hierbei handelt es sich um Auslagen gem. § 670 BGB, die im Auftrag und auf Rechnung des Auftraggebers verauslagt wurden. Diese Beträge werden ohne Umsatzsteuer weiterberechnet und sind nicht Bestandteil des steuerpflichtigen Entgelts."</div>
+    </div>`:''}
+    <div class="card" style="background:var(--gbg);border-color:rgba(201,168,76,.2)">
+      <div class="stitle">Rechnungssumme gesamt</div>
+      <div class="amr"><span class="aml">Leistungen (brutto, inkl. 19%)</span><span class="amv">${eur(brutto19)}</span></div>
+      ${auslagen>0?`<div class="amr"><span class="aml">Auslagen (0% MwSt.)</span><span class="amv">${eur(auslagen)}</span></div>`:''}
+      <div class="dvd"></div>
+      <div class="amr"><span class="aml" style="font-weight:500;color:var(--text)">Rechnungsbetrag</span><span style="font-size:20px;font-weight:500;color:var(--gold)">${eur(rechnungstotal)}</span></div>
+      <div style="margin-top:8px;font-size:11px;color:var(--t2);line-height:1.6">Grundlage für die Rechnungsstellung an elbdrop MoveMents. Bitte Rechnungsnummer, Steuer-ID und IBAN angeben.</div>
+    </div>
+    <div style="display:flex;gap:9px;margin-bottom:10px">
+      <button class="btn btn-outline" onclick="goDriver('billing')">← Zurück</button>
+      <button class="btn btn-gold" style="flex:2" onclick="dlBillingPDF(${b.id})">⬇ Abrechnung als PDF</button>
+    </div>
+    <button class="btn btn-green" onclick="beauftragen(${b.id})">✓ Beauftragen</button>
+  </div>`;
+  showPage('pg-billing-detail');
+}
+function beauftragen(id){
+  const b=billingItems.find(x=>x.id===id);if(!b)return;
+  if(b.status==='paid'){toast('Bereits abgerechnet');return;}
+  b.status=b.status==='ready'?'processing':'paid';
+  goDriver('billing');toast(b.status==='processing'?'✓ In Bearbeitung gesetzt':'✓ Als bezahlt markiert');
+}
+function dlBillingPDF(id){
+  const b=billingItems.find(x=>x.id===id);if(!b)return;
+  const ev=events.find(e=>e.id===b.eventId)||{};
+  const c=calcEvent(ev);
+  const myR=receipts.filter(r=>r.eventId===b.eventId&&r.driverId===CU.email);
+  const auslagen=myR.reduce((s,r)=>s+r.amt,0);
+  const netto19=c.total;const mwst=netto19*.19;const brutto19=netto19+mwst;const total=brutto19+auslagen;
+  const {jsPDF}=window.jspdf;const doc=new jsPDF();
+  doc.setFont('helvetica','bold');doc.setFontSize(18);doc.setTextColor(201,168,76);
+  doc.text('elbdrop MoveMents',20,22);
+  doc.setFontSize(11);doc.setTextColor(100,100,100);doc.setFont('helvetica','normal');
+  doc.text('Abrechnungsübersicht',20,30);doc.setDrawColor(200,200,200);doc.line(20,35,190,35);
+  doc.setFontSize(13);doc.setTextColor(30,30,30);doc.setFont('helvetica','bold');doc.text(b.event,20,44);
+  let y=56;
+  doc.setFontSize(11);doc.setTextColor(100,100,100);doc.setFont('helvetica','bold');doc.text('Zeitübersicht',20,y);y+=8;
+  doc.setFont('helvetica','normal');doc.setTextColor(60,60,60);
+  doc.text('Einsatztage:',20,y);doc.text(String(ev.days||0)+' Tag'+((ev.days||0)>1?'e':''),120,y);y+=7;
+  doc.text('Garantierte Std.:',20,y);doc.text((ev.days||0)*GH+'h',120,y);y+=7;
+  if(ev.extra){doc.text('Überstunden:',20,y);doc.text('+'+ev.extra+'h',120,y);y+=7;}
+  doc.setFont('helvetica','bold');doc.text('Gesamtstunden:',20,y);doc.setTextColor(180,130,50);doc.text(c.totalH+'h',120,y);y+=12;
+  doc.setTextColor(60,60,60);doc.setFont('helvetica','bold');doc.text('Leistungen — 19% MwSt.',20,y);y+=8;doc.setFont('helvetica','normal');
+  doc.text('Garantierte Vergütung:',20,y);doc.text(eur(c.guarPay),170,y,'right');y+=7;
+  if(c.extraPay){doc.text('Überstunden:',20,y);doc.text(eur(c.extraPay),170,y,'right');y+=7;}
+  doc.text('Verpflegungspauschale:',20,y);doc.text(eur(c.verpf),170,y,'right');y+=7;
+  if(ev.anr){doc.text('Anreisepauschale:',20,y);doc.text(eur(ev.anr),170,y,'right');y+=7;}
+  if(ev.abr){doc.text('Abreisepauschale:',20,y);doc.text(eur(ev.abr),170,y,'right');y+=7;}
+  doc.setDrawColor(220,220,220);doc.line(20,y,190,y);y+=5;
+  doc.text('Nettobetrag:',20,y);doc.text(eur(netto19),170,y,'right');y+=7;
+  doc.text('zzgl. 19% MwSt.:',20,y);doc.text(eur(mwst),170,y,'right');y+=7;
+  doc.setFont('helvetica','bold');doc.text('Bruttobetrag:',20,y);doc.setTextColor(180,130,50);doc.text(eur(brutto19),170,y,'right');y+=12;
+  if(auslagen>0){
+    doc.setTextColor(60,60,60);doc.setFont('helvetica','bold');doc.text('Auslagen — 0% MwSt. (steuerfrei)',20,y);y+=8;doc.setFont('helvetica','normal');
+    myR.forEach(r=>{doc.text(r.desc+':',20,y);doc.text(eur(r.amt),170,y,'right');y+=7;});
+    doc.setDrawColor(220,220,220);doc.line(20,y,190,y);y+=5;
+    doc.setFont('helvetica','bold');doc.setTextColor(29,158,117);doc.text('Auslagen gesamt:',20,y);doc.text(eur(auslagen),170,y,'right');y+=10;
+    doc.setFont('helvetica','italic');doc.setFontSize(9);doc.setTextColor(100,100,100);
+    const lines=doc.splitTextToSize('"Hierbei handelt es sich um Auslagen gem. § 670 BGB, die im Auftrag und auf Rechnung des Auftraggebers verauslagt wurden. Diese Beträge werden ohne Umsatzsteuer weiterberechnet."',170);
+    doc.text(lines,20,y);y+=lines.length*5+8;
+  }
+  doc.setFontSize(12);doc.setFont('helvetica','bold');doc.setTextColor(60,60,60);
+  doc.setDrawColor(180,130,50);doc.line(20,y,190,y);y+=6;
+  doc.text('Leistungen (brutto, 19%):',20,y);doc.text(eur(brutto19),170,y,'right');y+=7;
+  if(auslagen>0){doc.text('Auslagen (0% MwSt.):',20,y);doc.text(eur(auslagen),170,y,'right');y+=7;}
+  doc.setFontSize(13);doc.setTextColor(180,130,50);doc.text('Rechnungsbetrag:',20,y);doc.text(eur(total),170,y,'right');
+  doc.setFontSize(9);doc.setTextColor(150,150,150);doc.setFont('helvetica','normal');
+  doc.text('elbdrop MoveMents · info@elbdrop.com · Hamburg',20,285);
+  doc.save('abrechnung_'+b.event.replace(/[^\w]/g,'_').toLowerCase()+'.pdf');
+  toast('✓ PDF heruntergeladen');
+}
+
+// ══════════════════════════════════════════
+// DRIVER — PROFILE
+// ══════════════════════════════════════════
+function renderProfile(){
+  const pg=document.getElementById('pg-profile');
+  pg.innerHTML=`
+  <div class="sec" style="text-align:center;padding-top:20px">
+    <div class="ava">${CU.ini}</div>
+    <div style="font-size:15px;font-weight:500">${CU.name}</div>
+    <div style="font-size:11px;color:var(--t3);margin-top:2px">${CU.email}</div>
+  </div>
+  <div class="sec" style="padding-top:0">
+    <div class="stitle">Persönliche Daten</div>
+    <div class="card">
+      <div class="fg" style="margin-bottom:8px"><label class="fl">Anrede</label><select class="fsel" id="p-anrede"><option>Herr</option><option>Frau</option><option>Divers</option></select></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
+        <div class="fg"><label class="fl">Vorname</label><input class="fi" id="p-vn" placeholder="Vorname"></div>
+        <div class="fg"><label class="fl">Nachname</label><input class="fi" id="p-nn" placeholder="Nachname"></div>
+      </div>
+      <div class="fg" style="margin-bottom:8px"><label class="fl">Geburtsdatum</label><input class="fi" type="date" id="p-birth"></div>
+      <div class="fg" style="margin-bottom:8px"><label class="fl">Adresse</label><input class="fi" id="p-addr" placeholder="Straße & Hausnummer"></div>
+      <div style="display:grid;grid-template-columns:1fr 2fr;gap:8px;margin-bottom:8px">
+        <div class="fg"><label class="fl">PLZ</label><input class="fi" id="p-plz" placeholder="20095"></div>
+        <div class="fg"><label class="fl">Stadt</label><input class="fi" id="p-city" placeholder="Hamburg"></div>
+      </div>
+      <div class="fg" style="margin-bottom:8px"><label class="fl">Telefon</label><input class="fi" id="p-phone" placeholder="+49 40 ..."></div>
+      <div class="fg" style="margin-bottom:8px"><label class="fl">E-Mail</label><input class="fi" id="p-email" value="${CU.email}" readonly></div>
+      <div class="dvd"></div>
+      <div class="fg" style="margin-bottom:8px"><label class="fl">Steuer-ID</label><input class="fi" id="p-tax" placeholder="12 345 678 901"></div>
+      <div class="fg" style="margin-bottom:8px"><label class="fl">IBAN</label><input class="fi" id="p-iban" placeholder="DE89 3704 0044 ..."></div>
+      <div class="dvd"></div>
+      <label style="display:flex;align-items:center;gap:10px;cursor:pointer;margin-bottom:8px">
+        <input type="checkbox" id="p-ps" style="accent-color:var(--gold);width:16px;height:16px" onchange="togglePs()">
+        <span style="font-size:13px">P-Schein vorhanden</span>
+      </label>
+      <div id="p-ps-date" style="display:none;margin-bottom:8px"><div class="fg"><label class="fl">P-Schein gültig bis</label><input class="fi" type="date" id="p-ps-val"></div></div>
+      <button class="btn btn-gold" onclick="toast('✓ Daten gespeichert')">Daten speichern</button>
+    </div>
+  </div>
+  <div class="sec" style="padding-top:0">
+    <div class="stitle">Dokumente hochladen</div>
+    ${DOCS.map(d=>`<div class="upzone" onclick="trigDoc('${d.key}','${d.label}')">
+      <div style="font-size:12px;font-weight:500;color:var(--t2)">${uploadedDocs[d.key]?'✓ '+uploadedDocs[d.key]:'📎 '+d.label}</div>
+      <div style="font-size:10px;color:var(--t3);margin-top:2px">${uploadedDocs[d.key]?'Erneut hochladen':d.sub}</div>
+    </div>`).join('')}
+  </div>
+  <div class="sec" style="padding-top:0">
+    <div class="stitle">Verträge &amp; Vereinbarungen</div>
+    ${localCons.map(c=>`<div class="card" style="margin-bottom:10px">
+      <div class="crow">
+        <div><div class="ct" style="font-size:13px">${c.title}</div><div class="cs">${c.signed?'Unterzeichnet am '+c.signedDate:'Unterschrift erforderlich'}</div></div>
+        <span class="bdg ${c.signed?'b-done':'b-pend'}">${c.signed?'Signiert':'Offen'}</span>
+      </div>
+      <div style="display:flex;gap:7px;margin-top:10px">
+        ${!c.signed?`<button class="btn btn-gold" style="flex:2;padding:9px" onclick="openCon(${c.id})">Lesen &amp; Unterzeichnen</button>`:`<div style="font-size:11px;color:var(--green);padding:6px 0">✓ Digital unterzeichnet</div>`}
+        <button class="btn btn-outline" style="flex:1;padding:9px" onclick="dlConPDF(${c.id})">⬇ PDF</button>
+      </div>
+    </div>`).join('')}
+  </div>`;
+}
+function togglePs(){document.getElementById('p-ps-date').style.display=document.getElementById('p-ps').checked?'block':'none';}
+function trigDoc(key,label){
+  const inp=document.createElement('input');inp.type='file';inp.accept='.pdf,.jpg,.jpeg,.png';
+  inp.onchange=()=>{if(inp.files&&inp.files[0]){uploadedDocs[key]=inp.files[0].name;renderProfile();toast('✓ '+label+' hochgeladen');}};
+  inp.click();
+}
+function openCon(id){
+  activeCon=localCons.find(c=>c.id===id);if(!activeCon)return;
+  document.getElementById('cmod-title').textContent=activeCon.title;
+  document.getElementById('cmod-text').textContent=activeCon.text;
+  document.getElementById('cagree').checked=false;
+  openModal('mod-contract');
+  setTimeout(initSig,80);
+}
+function initSig(){
+  const cv=document.getElementById('sigcv'),pad=document.getElementById('sigpad');
+  cv.width=pad.offsetWidth;cv.height=pad.offsetHeight;
+  const ctx=cv.getContext('2d');ctx.strokeStyle='#c9a84c';ctx.lineWidth=2;ctx.lineCap='round';
+  sigHas=false;document.getElementById('siglbl').style.display='flex';
+  cv.onmousedown=e=>{sigDraw=true;sigLX=e.offsetX;sigLY=e.offsetY;document.getElementById('siglbl').style.display='none';};
+  cv.onmousemove=e=>{if(!sigDraw)return;ctx.beginPath();ctx.moveTo(sigLX,sigLY);ctx.lineTo(e.offsetX,e.offsetY);ctx.stroke();sigLX=e.offsetX;sigLY=e.offsetY;sigHas=true;};
+  cv.onmouseup=()=>sigDraw=false;
+  cv.ontouchstart=e=>{e.preventDefault();sigDraw=true;const t=e.touches[0],r=cv.getBoundingClientRect();sigLX=t.clientX-r.left;sigLY=t.clientY-r.top;document.getElementById('siglbl').style.display='none';};
+  cv.ontouchmove=e=>{e.preventDefault();if(!sigDraw)return;const t=e.touches[0],r=cv.getBoundingClientRect();ctx.beginPath();ctx.moveTo(sigLX,sigLY);ctx.lineTo(t.clientX-r.left,t.clientY-r.top);ctx.stroke();sigLX=t.clientX-r.left;sigLY=t.clientY-r.top;sigHas=true;};
+  cv.ontouchend=()=>sigDraw=false;
+}
+document.getElementById('sig-clear').onclick=()=>{const cv=document.getElementById('sigcv');cv.getContext('2d').clearRect(0,0,cv.width,cv.height);sigHas=false;document.getElementById('siglbl').style.display='flex';};
+document.getElementById('csign').onclick=()=>{
+  if(!document.getElementById('cagree').checked){toast('Bitte Zustimmung bestätigen');return;}
+  if(!sigHas){toast('Bitte unterschreiben');return;}
+  activeCon.signed=true;activeCon.signedDate=new Date().toLocaleDateString('de-DE');
+  closeModal('mod-contract');renderProfile();toast('✓ Vertrag unterzeichnet · PDF gespeichert');
+};
+function genConPDF(c){
+  const {jsPDF}=window.jspdf;const doc=new jsPDF();
+  doc.setFont('helvetica','bold');doc.setFontSize(16);doc.setTextColor(201,168,76);doc.text('elbdrop MoveMents',20,20);
+  doc.setFontSize(13);doc.setTextColor(30,30,30);doc.text(c.title,20,30);
+  doc.setDrawColor(200,200,200);doc.line(20,34,190,34);
+  doc.setFont('helvetica','normal');doc.setFontSize(10);doc.setTextColor(60,60,60);
+  doc.text(doc.splitTextToSize(c.text,170),20,42);
+  if(c.signed){
+    const sy=doc.internal.pageSize.height-40;
+    doc.setDrawColor(200,200,200);doc.line(20,sy,190,sy);
+    doc.setFontSize(9);doc.setTextColor(100,100,100);
+    doc.text('Digital unterzeichnet am: '+c.signedDate,20,sy+8);
+    doc.text('Fahrer: '+CU.name+' ('+CU.email+')',20,sy+15);
+    doc.setFont('helvetica','italic');doc.setTextColor(150,150,150);
+    doc.text('Rechtsverbindliche digitale Signatur gemäß elbdrop MoveMents Plattform',20,sy+22);
+  }
+  return doc;
+}
+function dlConPDF(id){const c=localCons.find(x=>x.id===id);if(!c)return;genConPDF(c).save(c.title.replace(/[^\w]/g,'_').toLowerCase()+'.pdf');toast('✓ PDF heruntergeladen');}
+</script>
+</body>
+</html>
